@@ -9,6 +9,7 @@ const Home = () => {
   const [error, setError] = useState(null)
   const [manualIngredients, setManualIngredients] = useState('')
   const [activeTab, setActiveTab] = useState('scanner') // 'scanner' or 'manual'
+  const [hasScanned, setHasScanned] = useState(false) // Prevent multiple scans
 
   const API_BASE_URL = 'http://localhost:5000'
 
@@ -47,12 +48,19 @@ const Home = () => {
     }
   }
 
-  const handleBarcodeDetected = (barcode) => {
-    console.log("Scanned barcode:", barcode);
+  const handleBarcodeDetected = async (barcode) => {
+    if (hasScanned) return
+    setHasScanned(true)
+    console.log("Scanned barcode:", barcode)
     // Pad barcode to 12 digits if it's short   
     const paddedBarcode = barcode.padStart(12, '0');
     console.log('Analyzing barcode:', paddedBarcode);
-    analyzeProduct({ barcode: paddedBarcode });
+    try {
+      await analyzeProduct({ barcode: paddedBarcode });
+    } finally {
+      // Allow scanning again after 3 seconds
+      setTimeout(() => setHasScanned(false), 3000);
+    }
   };
   
 

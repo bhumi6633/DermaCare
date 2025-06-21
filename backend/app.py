@@ -19,6 +19,18 @@ def load_bad_ingredients():
 
 BAD_INGREDIENTS = load_bad_ingredients()
 
+import time
+
+recent_scans = {}
+SCAN_TIMEOUT = 10  # seconds
+
+
+def has_scanned_recently(barcode):
+    now = time.time()
+    if barcode in recent_scans and now - recent_scans[barcode] < SCAN_TIMEOUT:
+        return True
+    recent_scans[barcode] = now
+    return False
 
 
 
@@ -26,7 +38,11 @@ BAD_INGREDIENTS = load_bad_ingredients()
 def get_product_info_from_upcitemdb(barcode):
     try:
         url = f"https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}"
+        print(f"URL: {url}")
+        time.sleep(30)
         response = requests.get(url, timeout=20)
+        print(f"RESPONSE {response}")
+        
 
         if response.status_code == 200:
             data = response.json()
@@ -40,6 +56,9 @@ def get_product_info_from_upcitemdb(barcode):
                 }
     except Exception as e:
         print(f"[UPCItemDB] Error: {e}")
+
+    print("UPCItemDB Response:", response.json())
+
     return None
 
 # INCI Beauty API (auth + parsed ingredients list)
@@ -66,6 +85,9 @@ def get_product_info_from_incibeauty(barcode):
             }
     except Exception as e:
         print(f"[INCI Beauty] Error: {e}")
+    
+    print("INCI Beauty Response:", response.json())
+
     return None
 
 # Parse ingredients text into list
@@ -115,25 +137,32 @@ def home():
         'harmful_ingredients_loaded': len(BAD_INGREDIENTS)
     })
 
+
+# Simple in-memory cache to avoid duplicate scans
 @app.route('/analyze', methods=['POST'])
 def analyze_product():
     try:
         data = request.get_json()
+        print("🛠 Received JSON:", data)
         barcode = data.get('barcode')
         ingredients_text = data.get('ingredients')
         product_info = None
 
-        # ✅ Fix for 13-digit barcode that starts with 0
         if barcode and len(barcode) == 13 and barcode.startswith("0"):
             barcode = barcode[1:]
             print(f"🛠 Trimmed barcode to 12 digits: {barcode}")
 
-        # Barcode first
         if barcode:
+            if has_scanned_recently(barcode):
+                return jsonify({
+                    'error': 'This barcode was already scanned recently. Please wait a few seconds.',
+                    'barcode': barcode
+                }), 429
+
             print(f"🔍 Scanning barcode: {barcode}")
             product_info = get_product_info_from_upcitemdb(barcode)
+            print(f"PRODUCT INFO {product_info}")
 
-            # Try INCI if no ingredients found
             if not product_info or not product_info.get('ingredients'):
                 print("📡 UPC failed or missing ingredients. Trying INCI...")
                 product_info = get_product_info_from_incibeauty(barcode)
@@ -146,15 +175,13 @@ def analyze_product():
 
             ingredients_text = product_info.get('ingredients', '')
 
-        # If raw ingredients provided or found
-        if ingredients_text:
-            ingredients_list = parse_ingredients(ingredients_text)
-        else:
+        if not ingredients_text:
             return jsonify({
                 'error': 'No ingredients found to analyze',
                 'product_info': product_info
             }), 400
 
+        ingredients_list = parse_ingredients(ingredients_text)
         analysis = analyze_ingredients(ingredients_list)
 
         return jsonify({
@@ -167,27 +194,6 @@ def analyze_product():
     except Exception as e:
         print(f"💥 Error in /analyze: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-
-
-# If we have product but no ingredients, prompt front-end to allow manual input
-        if not product_info or not product_info.get('ingredients'):
-            return jsonify({
-               'error': 'Product found but ingredients are not available. Please enter manually.',
-              'product_info': product_info,
-              'barcode': barcode
-         }), 400
-
-        ingredients_text = product_info.get('ingredients', '')
-        ingredients_list = parse_ingredients(ingredients_text)
-        analysis = analyze_ingredients(ingredients_list)
-
-        return jsonify({
-            'success': True,
-            'analysis': analysis,
-            'product_info': product_info,
-            'ingredients_analyzed': ingredients_list
-        })
-
     
 
 # Run the app
