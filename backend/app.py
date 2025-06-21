@@ -65,7 +65,6 @@ def analyze_ingredients(ingredients_list):
     }
 
 # Fetch product info from INCI Beauty
-
 def get_product_info_from_incibeauty(ean):
     try:
         path = f"/product/composition/{ean}/en_GB?accessKeyId={ACCESS_KEY}"
@@ -76,26 +75,37 @@ def get_product_info_from_incibeauty(ean):
         ).hexdigest()
 
         url = f"https://api.incibeauty.com{path}&hmac={hmac_signature}"
-        print(f"Calling INCI Beauty API: {url}")
+        print("Calling:", url)
+
         response = requests.get(url, timeout=10)
 
         if response.status_code == 200:
             data = response.json()
-            compositions = data.get('compositions', {})
-            ingredients_raw = compositions.get('ingredients', [])
-            ingredients_str = ", ".join([ing.get('inci_name', '') for ing in ingredients_raw])
+
+            # Handle compositions as a list
+            compositions_list = data.get('compositions', [])
+            ingredients_raw = []
+
+            if compositions_list and isinstance(compositions_list, list):
+                ingredients_raw = compositions_list[0].get('ingredients', [])
+
+            ingredients_str = ", ".join([ing.get('name') or ing.get('official_name') for ing in ingredients_raw if ing.get('name') or ing.get('official_name')])
 
             return {
                 'title': data.get('name', 'Unknown Product'),
                 'brand': data.get('brand', 'Unknown Brand'),
                 'ingredients': ingredients_str,
-                'image': data.get('image', {}).get('image')
+                'image': data.get('images', {}).get('image')
             }
+
         else:
-            print(f"[INCI] Failed with status {response.status_code}: {response.text}")
+            print(f"[INCI] Status Code: {response.status_code} | Body: {response.text}")
+
     except Exception as e:
         print(f"[INCI Beauty] Error: {e}")
+
     return None
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
