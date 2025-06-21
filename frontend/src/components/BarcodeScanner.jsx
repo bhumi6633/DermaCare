@@ -50,9 +50,9 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
     // Handle barcode detection
     Quagga.onDetected((result) => {
       let barcode = result.codeResult.code
-          if (barcode.length === 13 && barcode.startsWith('0')) {
-          barcode = barcode.slice(1)
-      }
+      //     if (barcode.length === 13 && barcode.startsWith('0')) {
+      //     barcode = barcode.slice(1)
+      // }
 
       console.log('[Scanner] Barcode detected:', barcode)
       Quagga.stop()

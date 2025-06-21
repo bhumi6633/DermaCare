@@ -3,7 +3,13 @@ from flask_cors import CORS
 import requests
 import json
 import re
-import base64
+import hmac
+import hashlib
+import time
+
+# INCI Beauty API credentials
+ACCESS_KEY = "bdcec7e387ab2359"
+SECRET_KEY = "8VDpSzOdEc+JqcUnrYtGHh5B3+XOI0dW"
 
 app = Flask(__name__)
 CORS(app)
@@ -19,11 +25,9 @@ def load_bad_ingredients():
 
 BAD_INGREDIENTS = load_bad_ingredients()
 
-import time
-
+# Simple scan cache to avoid hammering the API
 recent_scans = {}
 SCAN_TIMEOUT = 10  # seconds
-
 
 def has_scanned_recently(barcode):
     now = time.time()
@@ -32,75 +36,16 @@ def has_scanned_recently(barcode):
     recent_scans[barcode] = now
     return False
 
-
-
-# UPCItemDB: general fallback
-def get_product_info_from_upcitemdb(barcode):
-    try:
-        url = f"https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}"
-        print(f"URL: {url}")
-        time.sleep(30)
-        response = requests.get(url, timeout=20)
-        print(f"RESPONSE {response}")
-        
-
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('items'):
-                item = data['items'][0]
-                return {
-                    'title': item.get('title', 'Unknown Product'),
-                    'brand': item.get('brand', 'Unknown Brand'),
-                    'ingredients': item.get('ingredients', ''),  # May be empty
-                    'image': item.get('images', [None])[0] if item.get('images') else None
-                }
-    except Exception as e:
-        print(f"[UPCItemDB] Error: {e}")
-
-    print("UPCItemDB Response:", response.json())
-
-    return None
-
-# INCI Beauty API (auth + parsed ingredients list)
-def get_product_info_from_incibeauty(barcode):
-    try:
-        url = f"https://incibeauty.com/api/1/product/{barcode}.json"
-        headers = {
-            "Authorization": "Basic " + base64.b64encode(b"nidhiiii:Inci").decode("utf-8"),
-            "Accept": "application/json"
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        print(f"[INCI] Status: {response.status_code}")
-
-        if response.status_code == 200:
-            data = response.json()
-            ingredients_raw = data.get('ingredients', [])
-            ingredients_str = ", ".join([ing['name'] for ing in ingredients_raw])
-
-            return {
-                'title': data.get('name', 'Unknown Product'),
-                'brand': data.get('brand', {}).get('name', 'Unknown Brand'),
-                'ingredients': ingredients_str,
-                'image': data.get('images', {}).get('front')
-            }
-    except Exception as e:
-        print(f"[INCI Beauty] Error: {e}")
-    
-    print("INCI Beauty Response:", response.json())
-
-    return None
-
-# Parse ingredients text into list
+# Parse ingredients string into list
 def parse_ingredients(ingredients_text):
     if not ingredients_text:
         return []
-    return [i.strip().lower() for i in re.split(r'[,;.\n•]', ingredients_text) if i.strip()]
+    return [i.strip().lower() for i in re.split(r'[,;.\n\u2022]', ingredients_text) if i.strip()]
 
-# Analyze ingredients against harmful list
+# Check for harmful ingredients
 def analyze_ingredients(ingredients_list):
     harmful_found = {}
     total_harmful = 0
-
     for ingredient in ingredients_list:
         for category, data in BAD_INGREDIENTS.items():
             for bad in data['ingredients']:
@@ -112,7 +57,6 @@ def analyze_ingredients(ingredients_list):
                         }
                     harmful_found[category]['ingredients'].append(ingredient)
                     total_harmful += 1
-
     return {
         'safe': total_harmful == 0,
         'harmful_count': total_harmful,
@@ -120,7 +64,39 @@ def analyze_ingredients(ingredients_list):
         'total_ingredients_checked': len(ingredients_list)
     }
 
-# Health check
+# Fetch product info from INCI Beauty
+
+def get_product_info_from_incibeauty(ean):
+    try:
+        path = f"/product/composition/{ean}/en_GB?accessKeyId={ACCESS_KEY}"
+        hmac_signature = hmac.new(
+            SECRET_KEY.encode("utf-8"),
+            path.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+
+        url = f"https://api.incibeauty.com{path}&hmac={hmac_signature}"
+        print(f"Calling INCI Beauty API: {url}")
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            compositions = data.get('compositions', {})
+            ingredients_raw = compositions.get('ingredients', [])
+            ingredients_str = ", ".join([ing.get('inci_name', '') for ing in ingredients_raw])
+
+            return {
+                'title': data.get('name', 'Unknown Product'),
+                'brand': data.get('brand', 'Unknown Brand'),
+                'ingredients': ingredients_str,
+                'image': data.get('image', {}).get('image')
+            }
+        else:
+            print(f"[INCI] Failed with status {response.status_code}: {response.text}")
+    except Exception as e:
+        print(f"[INCI Beauty] Error: {e}")
+    return None
+
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
@@ -128,7 +104,6 @@ def health_check():
         'harmful_ingredients_loaded': len(BAD_INGREDIENTS) > 0
     })
 
-# API root
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -137,20 +112,13 @@ def home():
         'harmful_ingredients_loaded': len(BAD_INGREDIENTS)
     })
 
-
-# Simple in-memory cache to avoid duplicate scans
 @app.route('/analyze', methods=['POST'])
 def analyze_product():
     try:
         data = request.get_json()
-        print("🛠 Received JSON:", data)
         barcode = data.get('barcode')
         ingredients_text = data.get('ingredients')
         product_info = None
-
-        if barcode and len(barcode) == 13 and barcode.startswith("0"):
-            barcode = barcode[1:]
-            print(f"🛠 Trimmed barcode to 12 digits: {barcode}")
 
         if barcode:
             if has_scanned_recently(barcode):
@@ -160,16 +128,10 @@ def analyze_product():
                 }), 429
 
             print(f"🔍 Scanning barcode: {barcode}")
-            product_info = get_product_info_from_upcitemdb(barcode)
-            print(f"PRODUCT INFO {product_info}")
-
-            if not product_info or not product_info.get('ingredients'):
-                print("📡 UPC failed or missing ingredients. Trying INCI...")
-                product_info = get_product_info_from_incibeauty(barcode)
-
+            product_info = get_product_info_from_incibeauty(barcode)
             if not product_info:
                 return jsonify({
-                    'error': 'Product not found in either UPCItemDB or INCI Beauty',
+                    'error': 'Product not found in INCI Beauty',
                     'barcode': barcode
                 }), 404
 
@@ -194,9 +156,7 @@ def analyze_product():
     except Exception as e:
         print(f"💥 Error in /analyze: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-    
 
-# Run the app
 if __name__ == '__main__':
     print("🧴 DermaScan Backend Starting...")
     print(f"📊 Loaded {len(BAD_INGREDIENTS)} harmful ingredient categories")
