@@ -71,22 +71,35 @@ def parse_ingredients(ingredients_text):
 def analyze_ingredients(ingredients_list):
     harmful_found = {}
     total_harmful = 0
+    total_weightage = 0
+    found_ingredients = set()  # Track found ingredients to avoid duplicates
+    
     for ingredient in ingredients_list:
         for category, data in BAD_INGREDIENTS.items():
             for bad in data['ingredients']:
-                if bad.lower() in ingredient:
+                if bad.lower() in ingredient and ingredient not in found_ingredients:
                     if category not in harmful_found:
                         harmful_found[category] = {
                             'description': data['description'],
+                            'severity': data.get('severity', 'MODERATE'),
+                            'weightage': data.get('weightage', 10),
                             'ingredients': []
                         }
                     harmful_found[category]['ingredients'].append(ingredient)
+                    found_ingredients.add(ingredient)  # Mark as found
                     total_harmful += 1
+                    total_weightage += data.get('weightage', 10)
+    
+    # Calculate safety score based on weightages
+    safety_score = max(0, 100 - total_weightage)
+    
     return {
         'safe': total_harmful == 0,
         'harmful_count': total_harmful,
+        'total_weightage': total_weightage,
         'harmful_ingredients': harmful_found,
-        'total_ingredients_checked': len(ingredients_list)
+        'total_ingredients_checked': len(ingredients_list),
+        'safety_score': safety_score
     }
 
 # Fetch product info from INCI Beauty
@@ -138,20 +151,30 @@ def get_personalized_analysis(ingredients_list, user_profile):
     """
     harmful_found = {}
     total_harmful = 0
+    total_weightage = 0
+    found_ingredients = set()  # Track found ingredients to avoid duplicates
     personalized_score = 100  # Start with perfect score
 
-    # Base analysis
+    # Base analysis with weightages
     for ingredient in ingredients_list:
         for category, data in BAD_INGREDIENTS.items():
             for bad in data['ingredients']:
-                if bad.lower() in ingredient:
+                if bad.lower() in ingredient and ingredient not in found_ingredients:
                     if category not in harmful_found:
                         harmful_found[category] = {
                             'description': data['description'],
+                            'severity': data.get('severity', 'MODERATE'),
+                            'weightage': data.get('weightage', 10),
                             'ingredients': []
                         }
                     harmful_found[category]['ingredients'].append(ingredient)
+                    found_ingredients.add(ingredient)  # Mark as found
                     total_harmful += 1
+                    total_weightage += data.get('weightage', 10)
+
+    # Calculate base safety score using weightages
+    base_safety_score = max(0, 100 - total_weightage)
+    personalized_score = base_safety_score
 
     # Personalized scoring based on user profile
     if user_profile:
@@ -159,34 +182,39 @@ def get_personalized_analysis(ingredients_list, user_profile):
         gender = user_profile.get('gender', '')
         skin_type = user_profile.get('skinType', '')
 
-        # Age-based adjustments
+        # Age-based adjustments (multiplier for weightage impact)
+        age_multiplier = 1.0
         if age == 'under_18':
-            # Young skin is more sensitive to harsh ingredients
-            personalized_score -= total_harmful * 15
+            # Young skin is more sensitive to all ingredients
+            age_multiplier = 1.3
         elif age == '18_32':
             # Young adult skin can handle some ingredients better
-            personalized_score -= total_harmful * 12
+            age_multiplier = 1.0
         elif age == '32_56':
             # Mature skin needs gentler ingredients
-            personalized_score -= total_harmful * 10
+            age_multiplier = 1.1
         elif age == '56_plus':
             # Senior skin is most sensitive
-            personalized_score -= total_harmful * 18
+            age_multiplier = 1.4
 
-        # Skin type adjustments
+        # Apply age multiplier to weightage
+        adjusted_weightage = total_weightage * age_multiplier
+        personalized_score = max(0, 100 - adjusted_weightage)
+
+        # Skin type adjustments (additional penalties for specific ingredients)
         if skin_type == 'dry':
             # Dry skin is more sensitive to drying ingredients
-            for category in harmful_found:
+            for category, data in harmful_found.items():
                 if 'alcohols' in category or 'sulfates' in category:
-                    personalized_score -= 5
+                    personalized_score -= data.get('weightage', 10) * 0.2  # Additional 20% penalty
         elif skin_type == 'oily':
             # Oily skin can handle some ingredients better but sensitive to comedogenic ones
-            for category in harmful_found:
+            for category, data in harmful_found.items():
                 if 'mineral_oil' in category:
-                    personalized_score -= 8
+                    personalized_score -= data.get('weightage', 10) * 0.3  # Additional 30% penalty
         elif skin_type == 'combination':
             # Combination skin needs balanced approach
-            personalized_score -= total_harmful * 2
+            personalized_score -= total_weightage * 0.1  # Additional 10% penalty
 
     # Ensure score doesn't go below 0
     personalized_score = max(0, personalized_score)
@@ -197,6 +225,7 @@ def get_personalized_analysis(ingredients_list, user_profile):
     return {
         'safe': total_harmful == 0,
         'harmful_count': total_harmful,
+        'total_weightage': total_weightage,
         'harmful_ingredients': harmful_found,
         'total_ingredients_checked': len(ingredients_list),
         'personalized_score': round(personalized_score, 1),

@@ -1,6 +1,8 @@
 {
   "parabens": {
     "description": "Preservatives that can disrupt hormones and cause skin irritation",
+    "weightage": 8,
+    "severity": "HIGH",
     "ingredients": [
       "methylparaben",
       "ethylparaben",
@@ -12,6 +14,8 @@
   },
   "sulfates": {
     "description": "Harsh detergents that strip natural oils and cause irritation",
+    "weightage": 6,
+    "severity": "MODERATE",
     "ingredients": [
       "sodium lauryl sulfate",
       "sodium laureth sulfate",
@@ -22,6 +26,8 @@
   },
   "alcohols": {
     "description": "Drying alcohols that can cause skin irritation and premature aging",
+    "weightage": 5,
+    "severity": "MODERATE",
     "ingredients": [
       "denatured alcohol",
       "ethyl alcohol",
@@ -33,6 +39,8 @@
   },
   "phthalates": {
     "description": "Plasticizers that can disrupt hormones and cause reproductive issues",
+    "weightage": 12,
+    "severity": "CRITICAL",
     "ingredients": [
       "dibutyl phthalate",
       "diethyl phthalate",
@@ -42,6 +50,8 @@
   },
   "formaldehyde": {
     "description": "Carcinogenic preservative that can cause skin irritation and allergies",
+    "weightage": 15,
+    "severity": "CRITICAL",
     "ingredients": [
       "formaldehyde",
       "formalin",
@@ -54,6 +64,8 @@
   },
   "triclosan": {
     "description": "Antibacterial agent that can disrupt hormones and cause skin irritation",
+    "weightage": 10,
+    "severity": "HIGH",
     "ingredients": [
       "triclosan",
       "triclocarban"
@@ -61,6 +73,8 @@
   },
   "retinoids": {
     "description": "Vitamin A derivatives that can cause severe irritation and sun sensitivity",
+    "weightage": 7,
+    "severity": "HIGH",
     "ingredients": [
       "retinol",
       "retinyl palmitate",
@@ -71,6 +85,8 @@
   },
   "fragrances": {
     "description": "Synthetic fragrances that can cause allergies and skin irritation",
+    "weightage": 4,
+    "severity": "LOW",
     "ingredients": [
       "fragrance",
       "parfum",
@@ -80,6 +96,8 @@
   },
   "mineral_oil": {
     "description": "Petroleum-derived oil that can clog pores and cause breakouts",
+    "weightage": 3,
+    "severity": "LOW",
     "ingredients": [
       "mineral oil",
       "petrolatum",
@@ -89,6 +107,8 @@
   },
   "artificial_colors": {
     "description": "Synthetic dyes that can cause skin irritation and allergies",
+    "weightage": 5,
+    "severity": "MODERATE",
     "ingredients": [
       "fd&c red no. 40",
       "fd&c blue no. 1",

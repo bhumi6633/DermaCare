@@ -97,9 +97,21 @@ const Results = () => {
           <div className="space-y-4">
             {Object.entries(harmful_ingredients).map(([category, data]) => (
               <div key={category} className="border border-red-200 rounded-lg p-4 bg-red-50">
-                <h4 className="font-semibold text-red-800 capitalize mb-2">
-                  {category.replace('_', ' ')}
-                </h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-red-800 capitalize">
+                    {category.replace('_', ' ')}
+                  </h4>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      data.severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
+                      data.severity === 'HIGH' ? 'bg-orange-200 text-orange-800' :
+                      data.severity === 'MODERATE' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-blue-200 text-blue-800'
+                    }`}>
+                      {data.severity}
+                    </span>
+                  </div>
+                </div>
                 <p className="text-red-700 text-sm mb-3">
                   {data.description}
                 </p>
@@ -112,6 +124,40 @@ const Results = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Severity Summary */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-3">Severity Breakdown</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              {(() => {
+                const severityCounts = {
+                  'CRITICAL': 0,
+                  'HIGH': 0,
+                  'MODERATE': 0,
+                  'LOW': 0
+                };
+                
+                Object.values(harmful_ingredients).forEach(data => {
+                  const severity = data.severity || 'MODERATE';
+                  severityCounts[severity] += data.ingredients.length;
+                });
+
+                return Object.entries(severityCounts).map(([severity, count]) => (
+                  <div key={severity} className="text-center">
+                    <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
+                      severity === 'HIGH' ? 'bg-orange-200 text-orange-800' :
+                      severity === 'MODERATE' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-blue-200 text-blue-800'
+                    }`}>
+                      {severity}
+                    </div>
+                    <div className="text-gray-600 mt-1">{count} ingredients</div>
+                  </div>
+                ));
+              })()}
+            </div>
           </div>
         </div>
       )}
