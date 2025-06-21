@@ -12,6 +12,20 @@ import base64
 ACCESS_KEY = "bdcec7e387ab2359"
 SECRET_KEY = "8VDpSzOdEc+JqcUnrYtGHh5B3+XOI0dW"
 
+# Gemini API Key for AI recommendations
+GEMINI_API_KEY = "AIzaSyCTHv7Z6IIMxp78tksAZ_y14RPc0FJn7SU"
+
+# Initialize Gemini AI for recommendations
+try:
+    import google.generativeai as genai
+    genai.configure(api_key=GEMINI_API_KEY)  # type: ignore
+    gemini_model = genai.GenerativeModel("gemini-1.5-flash")  # type: ignore
+    AI_AVAILABLE = True
+    print("🤖 AI recommendations enabled")
+except Exception as e:
+    print(f"⚠️ AI not available: {e}")
+    AI_AVAILABLE = False
+
 app = Flask(__name__)
 CORS(app)
 
@@ -204,19 +218,110 @@ def get_score_category(score):
         return "Very Poor"
 
 def get_personalized_recommendations(user_profile):
-    """Get personalized skincare recommendations based on user profile"""
-    if not user_profile or not SKINCARE_RECOMMENDATIONS:
+    """Get AI-powered personalized skincare recommendations based on user profile"""
+    if not user_profile:
         return None
 
     age = user_profile.get('age', '')
     gender = user_profile.get('gender', '')
     skin_type = user_profile.get('skinType', '')
 
-    try:
-        recommendations = SKINCARE_RECOMMENDATIONS['recommendations'].get(age, {}).get(gender, {}).get(skin_type, {})
-        return recommendations
-    except:
-        return None
+    # Try AI recommendations first
+    if AI_AVAILABLE:
+        try:
+            prompt = f"""
+You are a skincare expert. Provide personalized skincare recommendations for this user profile.
+
+User Profile:
+- Age Group: {age.replace('_', '-') if age else 'Unknown'}
+- Gender: {gender or 'Unknown'}
+- Skin Type: {skin_type or 'Unknown'}
+
+Provide recommendations in this exact JSON format:
+{{
+  "products": ["Product 1", "Product 2", "Product 3"],
+  "tips": ["Tip 1", "Tip 2", "Tip 3"],
+  "avoid_ingredients": ["ingredient1", "ingredient2"],
+  "look_for_ingredients": ["ingredient1", "ingredient2"]
+}}
+
+Focus on specific product recommendations and actionable tips for this user's profile.
+"""
+
+            response = gemini_model.generate_content(prompt)
+            ai_recommendations = json.loads(response.text)
+            print(f"✅ AI recommendations generated successfully")
+            return ai_recommendations
+        except Exception as e:
+            print(f"❌ AI recommendations failed: {e}")
+            # Fall through to basic recommendations
+    
+    # Fallback to basic recommendations based on user profile
+    print(f"📝 Using fallback recommendations for {age}, {gender}, {skin_type}")
+    
+    fallback_recommendations = {
+        "products": [],
+        "tips": [],
+        "avoid_ingredients": [],
+        "look_for_ingredients": []
+    }
+    
+    # Basic recommendations based on skin type
+    if skin_type == 'dry':
+        fallback_recommendations["tips"].extend([
+            "Use gentle, hydrating cleansers",
+            "Apply moisturizer while skin is still damp",
+            "Avoid hot water when washing face"
+        ])
+        fallback_recommendations["look_for_ingredients"].extend([
+            "hyaluronic acid",
+            "ceramides",
+            "glycerin"
+        ])
+        fallback_recommendations["avoid_ingredients"].extend([
+            "alcohol",
+            "fragrance",
+            "sulfates"
+        ])
+    elif skin_type == 'oily':
+        fallback_recommendations["tips"].extend([
+            "Use oil-free, non-comedogenic products",
+            "Don't skip moisturizer - use lightweight formulas",
+            "Consider double cleansing"
+        ])
+        fallback_recommendations["look_for_ingredients"].extend([
+            "niacinamide",
+            "salicylic acid",
+            "zinc"
+        ])
+        fallback_recommendations["avoid_ingredients"].extend([
+            "mineral oil",
+            "petrolatum",
+            "heavy oils"
+        ])
+    elif skin_type == 'combination':
+        fallback_recommendations["tips"].extend([
+            "Use different products for different areas",
+            "Focus on balancing the skin",
+            "Consider multi-masking"
+        ])
+        fallback_recommendations["look_for_ingredients"].extend([
+            "niacinamide",
+            "hyaluronic acid",
+            "vitamin C"
+        ])
+    
+    # Age-based recommendations
+    if age == 'under_18':
+        fallback_recommendations["tips"].append("Keep it simple - focus on gentle cleansing and sun protection")
+    elif age == '18_32':
+        fallback_recommendations["tips"].append("Start incorporating antioxidants and retinoids gradually")
+    elif age == '32_56':
+        fallback_recommendations["tips"].append("Focus on anti-aging ingredients and collagen support")
+    elif age == '56_plus':
+        fallback_recommendations["tips"].append("Use richer moisturizers and gentle exfoliation")
+    
+    return fallback_recommendations
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -248,12 +353,6 @@ def analyze_product():
             print(f"🛠 Trimmed barcode to 12 digits: {barcode}")
 
         if barcode:
-            if has_scanned_recently(barcode):
-                return jsonify({
-                    'error': 'This barcode was already scanned recently. Please wait a few seconds.',
-                    'barcode': barcode
-                }), 429
-
             print(f"🔍 Scanning barcode: {barcode}")
             
             product_info = get_product_info_from_incibeauty(barcode)

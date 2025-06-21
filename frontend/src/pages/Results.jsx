@@ -146,34 +146,119 @@ const Results = () => {
       )}
 
       {/* Personalized Recommendations */}
-      {recommendations && (
+      {recommendations ? (
         <div className="card mb-6">
-          <h3 className="text-xl font-semibold text-primary-700 mb-4">
-            Personalized Recommendations
-          </h3>
-          {recommendations.description && (
-            <p className="mb-2 text-gray-700">{recommendations.description}</p>
-          )}
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold text-primary-700">
+              💡 Personalized Recommendations
+            </h3>
+            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+              {recommendations.products && recommendations.products.length > 0 ? 'AI Generated' : 'Basic'}
+            </span>
+          </div>
+          
+          {/* Products Section */}
           {recommendations.products && recommendations.products.length > 0 && (
-            <div className="mb-2">
-              <div className="font-semibold mb-1">Recommended Products:</div>
-              <ul className="list-disc list-inside text-gray-800">
-                {recommendations.products.map((prod, idx) => (
-                  <li key={idx}>{prod}</li>
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                🛍️ Recommended Products
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {recommendations.products.map((product, idx) => (
+                  <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="text-green-800 font-medium">{product}</div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
+
+          {/* Tips Section */}
           {recommendations.tips && recommendations.tips.length > 0 && (
-            <div>
-              <div className="font-semibold mb-1">Tips:</div>
-              <ul className="list-disc list-inside text-gray-700">
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                💡 Skincare Tips
+              </h4>
+              <div className="space-y-2">
                 {recommendations.tips.map((tip, idx) => (
-                  <li key={idx}>{tip}</li>
+                  <div key={idx} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="text-blue-800">{tip}</div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
+
+          {/* Ingredients to Avoid */}
+          {recommendations.avoid_ingredients && recommendations.avoid_ingredients.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                ⚠️ Ingredients to Avoid
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {recommendations.avoid_ingredients.map((ingredient, idx) => (
+                  <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-2">
+                    <div className="text-red-800 text-sm">{ingredient}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ingredients to Look For */}
+          {recommendations.look_for_ingredients && recommendations.look_for_ingredients.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                ✅ Ingredients to Look For
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {recommendations.look_for_ingredients.map((ingredient, idx) => (
+                  <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-2">
+                    <div className="text-green-800 text-sm">{ingredient}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback for old format */}
+          {recommendations.description && !recommendations.products && !recommendations.tips && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-gray-700">{recommendations.description}</p>
+            </div>
+          )}
+
+          {/* No recommendations content */}
+          {(!recommendations.products || recommendations.products.length === 0) && 
+           (!recommendations.tips || recommendations.tips.length === 0) && 
+           (!recommendations.avoid_ingredients || recommendations.avoid_ingredients.length === 0) && 
+           (!recommendations.look_for_ingredients || recommendations.look_for_ingredients.length === 0) && 
+           !recommendations.description && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800">
+                <strong>Note:</strong> No specific recommendations available for your profile. 
+                Try scanning a product with different ingredients or check back later for updated recommendations.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* No User Profile - Show basic message */
+        <div className="card mb-6">
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-700">
+              💡 Recommendations
+            </h3>
+            <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+              Basic
+            </span>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800">
+              <strong>Tip:</strong> Create a user profile to get personalized recommendations! 
+              Go to your profile page to set up your age, gender, and skin type for customized advice.
+            </p>
+          </div>
         </div>
       )}
 
