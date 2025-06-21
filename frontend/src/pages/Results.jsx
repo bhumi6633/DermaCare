@@ -14,7 +14,7 @@ const Results = () => {
     return null
   }
 
-  const { safe, harmful_count, harmful_ingredients, total_ingredients_checked } = analysis
+  const { safe, harmful_count, harmful_ingredients, total_ingredients_checked, personalized_score, score_category, recommendations } = analysis
 
   const getSafetyColor = () => {
     return safe ? 'text-success-600' : 'text-danger-600'
@@ -76,6 +76,14 @@ const Results = () => {
           <div className="text-sm text-gray-500">
             Analyzed {total_ingredients_checked} ingredients
           </div>
+          {/* Personalized Score */}
+          {typeof personalized_score !== 'undefined' && (
+            <div className="mt-4">
+              <div className="text-lg font-semibold">
+                Personalized Score: <span className="text-primary-600">{personalized_score} / 100</span> ({score_category})
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -134,6 +142,38 @@ const Results = () => {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Personalized Recommendations */}
+      {recommendations && (
+        <div className="card mb-6">
+          <h3 className="text-xl font-semibold text-primary-700 mb-4">
+            Personalized Recommendations
+          </h3>
+          {recommendations.description && (
+            <p className="mb-2 text-gray-700">{recommendations.description}</p>
+          )}
+          {recommendations.products && recommendations.products.length > 0 && (
+            <div className="mb-2">
+              <div className="font-semibold mb-1">Recommended Products:</div>
+              <ul className="list-disc list-inside text-gray-800">
+                {recommendations.products.map((prod, idx) => (
+                  <li key={idx}>{prod}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {recommendations.tips && recommendations.tips.length > 0 && (
+            <div>
+              <div className="font-semibold mb-1">Tips:</div>
+              <ul className="list-disc list-inside text-gray-700">
+                {recommendations.tips.map((tip, idx) => (
+                  <li key={idx}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

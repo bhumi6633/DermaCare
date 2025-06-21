@@ -1,21 +1,42 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import BarcodeScanner from '../components/BarcodeScanner'
 import axios from 'axios'
 
 const Home = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [manualIngredients, setManualIngredients] = useState('')
   const [activeTab, setActiveTab] = useState('scanner') // 'scanner' or 'manual'
   const [hasScanned, setHasScanned] = useState(false) // Prevent multiple scans
+  const [userProfile, setUserProfile] = useState(null)
 
   const API_BASE_URL = 'http://localhost:5000'
+
+  // Load user profile from localStorage or location state
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('userProfile')
+    if (savedProfile) {
+      setUserProfile(JSON.parse(savedProfile))
+    }
+    
+    // Check if profile was passed from Profile page
+    if (location.state?.userProfile) {
+      setUserProfile(location.state.userProfile)
+      localStorage.setItem('userProfile', JSON.stringify(location.state.userProfile))
+    }
+  }, [location.state])
 
   const analyzeProduct = async (data) => {
     setLoading(true)
     setError(null)
+    
+    // Add user profile to request if available
+    if (userProfile) {
+      data.user_profile = userProfile
+    }
     
     try {
       // console.log("Scanned barcode:", barcode)
@@ -27,7 +48,8 @@ const Home = () => {
           state: {
             analysis: response.data.analysis,
             productInfo: response.data.product_info,
-            ingredientsAnalyzed: response.data.ingredients_analyzed
+            ingredientsAnalyzed: response.data.ingredients_analyzed,
+            userProfile: userProfile
           }
         })
       } else {
@@ -48,19 +70,30 @@ const Home = () => {
     }
   }
 
-  const handleBarcodeDetected = async (barcode) => {
+  const handleBarcodeDetected = async (scanData) => {
     if (hasScanned) return
     setHasScanned(true)
-    console.log("Scanned barcode:", barcode)
-    // Pad barcode to 12 digits if it's short   
-    const paddedBarcode = barcode.padStart(12, '0');
-    console.log('Analyzing barcode:', paddedBarcode);
-    try {
-      await analyzeProduct({ barcode: paddedBarcode });
-    } finally {
-      // Allow scanning again after 3 seconds
-      setTimeout(() => setHasScanned(false), 3000);
+    
+    // scanData now contains: { barcode, analysis, product_info, ingredients_analyzed }
+    console.log("Scan data received:", scanData)
+    
+    if (scanData.analysis) {
+      // Analysis was successful, navigate to results
+      navigate('/results', {
+        state: {
+          analysis: scanData.analysis,
+          productInfo: scanData.product_info,
+          ingredientsAnalyzed: scanData.ingredients_analyzed,
+          userProfile: userProfile
+        }
+      })
+    } else {
+      // Handle case where analysis failed but barcode was detected
+      setError('Barcode detected but analysis failed. Please try again.')
     }
+    
+    // Allow scanning again after 3 seconds
+    setTimeout(() => setHasScanned(false), 3000);
   };
   
 
@@ -94,6 +127,46 @@ const Home = () => {
           Get instant analysis of harmful ingredients in your skincare products
         </p>
       </div>
+
+      {/* Profile Status */}
+      {userProfile && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-800 font-medium">Personalized Analysis Enabled</p>
+              <p className="text-green-600 text-sm">
+                Age: {userProfile.age.replace('_', '-')} | Gender: {userProfile.gender} | Skin: {userProfile.skinType}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="text-green-600 hover:text-green-800 text-sm underline"
+            >
+              Edit Profile
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Setup Prompt */}
+      {!userProfile && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-800 font-medium">Get Personalized Recommendations</p>
+              <p className="text-blue-600 text-sm">
+                Set up your profile to receive tailored ingredient analysis and product recommendations
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+            >
+              Set Up Profile
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex justify-center mb-8">
@@ -150,6 +223,7 @@ const Home = () => {
           <BarcodeScanner 
             onBarcodeDetected={handleBarcodeDetected}
             onError={handleScannerError}
+            userProfile={userProfile}
           />
         ) : (
           <div className="text-center">

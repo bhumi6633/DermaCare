@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import Quagga from 'quagga'
 import axios from 'axios' 
 
-const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
+const BarcodeScanner = ({ onBarcodeDetected, onError, userProfile }) => {
   const scannerRef = useRef(null)
   const [isScanning, setIsScanning] = useState(false)
   const [error, setError] = useState(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const startScanner = () => {
     setIsScanning(true)
@@ -57,21 +58,52 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
       console.log('[Scanner] Barcode detected:', barcode)
       Quagga.stop()
       setIsScanning(false)
+      setIsAnalyzing(true)
     
       // 🔽 Send to backend
-      axios.post("http://localhost:5000/analyze", {
+      const requestData = {
         barcode: barcode
-      })
+      }
       
-      .then((res) => {
-        console.log("Analysis result:", res.data)
-        // Show result to user here
-      })
-      .catch((err) => {
-        console.error("Error from backend:", err)
-      })
-    
-      onBarcodeDetected && onBarcodeDetected(barcode)
+      // Add user profile if available
+      if (userProfile) {
+        requestData.user_profile = userProfile
+      }
+      
+      axios.post("http://localhost:5000/analyze", requestData)
+        .then((res) => {
+          console.log("Analysis result:", res.data)
+          setIsAnalyzing(false)
+          
+          if (res.data.success) {
+            // Pass the complete analysis data to parent component
+            onBarcodeDetected && onBarcodeDetected({
+              barcode: barcode,
+              analysis: res.data.analysis,
+              product_info: res.data.product_info,
+              ingredients_analyzed: res.data.ingredients_analyzed
+            })
+          } else {
+            setError(res.data.error || 'Analysis failed')
+            onError && onError(res.data.error || 'Analysis failed')
+          }
+        })
+        .catch((err) => {
+          console.error("Error from backend:", err)
+          setIsAnalyzing(false)
+          
+          let errorMessage = 'Network error occurred'
+          if (err.response) {
+            // Server responded with error status
+            errorMessage = err.response.data?.error || `Server error: ${err.response.status}`
+          } else if (err.request) {
+            // Request was made but no response received
+            errorMessage = 'No response from server. Please check if the backend is running.'
+          }
+          
+          setError(errorMessage)
+          onError && onError(errorMessage)
+        })
     })
 
     // Handle errors
@@ -125,7 +157,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
 
       {/* Scanner Controls */}
       <div className="flex justify-center gap-4 mb-4">
-        {!isScanning ? (
+        {!isScanning && !isAnalyzing ? (
           <button
             onClick={handleStartScan}
             className="btn-primary"
@@ -136,17 +168,25 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
           <button
             onClick={handleStopScan}
             className="btn-secondary"
+            disabled={isAnalyzing}
           >
             ⏹️ Stop Scanner
           </button>
         )}
       </div>
 
-      {/* Visual scanning indicator */}
+      {/* Visual scanning/analyzing indicator */}
       {isScanning && (
         <div className="flex justify-center items-center mb-4">
           <span className="animate-spin mr-2 h-5 w-5 border-2 border-primary-600 border-t-transparent rounded-full"></span>
           <span className="text-primary-600 font-medium">Scanning...</span>
+        </div>
+      )}
+      
+      {isAnalyzing && (
+        <div className="flex justify-center items-center mb-4">
+          <span className="animate-spin mr-2 h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
+          <span className="text-green-600 font-medium">Analyzing product...</span>
         </div>
       )}
 
@@ -154,6 +194,12 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
           <p className="text-red-700 text-sm">{error}</p>
+          <button 
+            onClick={() => setError(null)}
+            className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -164,7 +210,7 @@ const BarcodeScanner = ({ onBarcodeDetected, onError }) => {
           className="w-full max-w-md mx-auto bg-gray-900 rounded-lg overflow-hidden"
           style={{ height: '300px' }}
         >
-          {!isScanning && (
+          {!isScanning && !isAnalyzing && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-gray-400">
                 <div className="text-4xl mb-2">📷</div>

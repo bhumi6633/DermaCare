@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Results from './pages/Results'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -14,6 +15,11 @@ function App() {
                 <h1 className="text-2xl font-bold text-primary-600">🧴 DermaScan</h1>
                 <span className="ml-2 text-sm text-gray-500">Skincare Safety Scanner</span>
               </div>
+              <div className="flex items-center space-x-4">
+                <a href="/profile" className="text-gray-600 hover:text-primary-600 text-sm">
+                  👤 Profile
+                </a>
+              </div>
             </div>
           </div>
         </header>
@@ -22,6 +28,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </div>
