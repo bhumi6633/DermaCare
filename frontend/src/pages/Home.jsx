@@ -17,6 +17,7 @@ const Home = () => {
     setError(null)
     
     try {
+      // console.log("Scanned barcode:", barcode)
       const response = await axios.post(`${API_BASE_URL}/analyze`, data)
       
       if (response.data.success) {
@@ -47,11 +48,15 @@ const Home = () => {
   }
 
   const handleBarcodeDetected = (barcode) => {
-    console.log('Analyzing barcode:', barcode)
-    analyzeProduct({ barcode })
-  }
+    console.log("Scanned barcode:", barcode);
+    // Pad barcode to 12 digits if it's short   
+    const paddedBarcode = barcode.padStart(12, '0');
+    console.log('Analyzing barcode:', paddedBarcode);
+    analyzeProduct({ barcode: paddedBarcode });
+  };
+  
 
-  const handleManualSubmit = (e) => {
+  const handleManualSubmit = (e  ) =>   {
     e.preventDefault()
     
     if (!manualIngredients.trim()) {
