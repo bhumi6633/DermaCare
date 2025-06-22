@@ -1,17 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // If a user is already logged in, redirect them to the scanner
-    const loggedInUser = localStorage.getItem('dermascan-user');
-    if (loggedInUser) {
-      navigate('/scanner');
-    }
-  }, [navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -48,11 +40,11 @@ const Login = () => {
       <div className="w-2/5 h-screen flex flex-col items-center justify-center p-12">
         
         <div className="relative mb-12">
-          <h2 className="font-gloria text-9xl text-amber-200 fixed top-20 left-[1115px]">Login</h2>
-          <h2 className="font-gloria text-9xl text-custom-blue fixed top-20 left-[1120px]" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.1)'}}>Login</h2>
+          <h2 className="font-gloria text-8xl text-amber-200 ml-24">Login</h2>
+          <h2 className="font-gloria text-8xl text-custom-blue absolute top-1 left-1 ml-24" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.1)'}}>Login</h2>
         </div>
 
-        <form onSubmit={handleLogin} className="w-full max-w-sm" style={{ transform: 'translateX(50px)' }}>
+        <form onSubmit={handleLogin} className="w-full max-w-sm ml-28">
           <input
             type="text"
             value={username}

@@ -26,6 +26,12 @@ const Layout = () => {
             </h1>
           </Link>
 
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <span className="font-quicksand font-bold text-lg text-white drop-shadow-sm uppercase opacity-90">
+              Scan It. Know It. Glow It.
+            </span>
+          </div>
+
           {username && (
             <button
               onClick={handleProfileClick}

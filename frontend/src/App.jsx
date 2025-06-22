@@ -11,6 +11,9 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Root route - redirect to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
         <Route path="/login" element={<Login />} />
         
         {/* Routes with the main layout (pink header) */}
