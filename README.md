@@ -1,55 +1,39 @@
-# DermaScan 🧴
+# DermaCare
 
-A web app that scans skincare product barcodes, analyzes ingredients, and determines product safety.
+**DermaCare** is a web-based skincare assistant that lets users scan cosmetic product barcodes to instantly identify potentially harmful ingredients. It leverages external APIs, a curated ingredient safety database, and AI to deliver clear health insights and personalized recommendations.
 
-## 🚀 Quick Start
+---
 
-### Backend Setup
-```bash
-cd backend
-pip install -r requirements.txt
-python app.py
-```
-Backend runs on: http://localhost:5000
+## Features
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Frontend runs on: http://localhost:5173
+- 🔍 **Barcode Scanning** – Scan cosmetic/skincare product barcodes in real time using your device camera  
+- 🧪 **Ingredient Analysis** – Automatically flag ingredients like parabens, phthalates, and formaldehyde releasers based on safety categories  
+- 🧠 **AI-Powered Recommendations** – Suggest safer alternatives and skincare tips using Gemini AI and Serp API  
+- 👤 **User Personalization** – Generate safety ratings based on user-defined skin type and sensitivities  
+- 📋 **Product Reports** – Provide clear reports including ingredient descriptions, severity scores, and explanations
 
-## 🏗️ Project Structure
-```
-dermascan/
-├── backend/
-│   ├── app.py              # Flask server
-│   ├── requirements.txt    # Python dependencies
-│   └── data/
-│       └── bad_ingredients.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── BarcodeScanner.jsx
-│   │   │   └── Results.jsx
-│   │   ├── pages/
-│   │   │   ├── Home.jsx
-│   │   │   └── Results.jsx
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── package.json
-│   └── index.html
-└── README.md
-```
+---
 
-## 🔧 Features
-- 📱 Barcode scanning with QuaggaJS
-- 🧪 Ingredient analysis against harmful substances
-- ⚡ Real-time safety verdict
-- 📊 Detailed ingredient breakdown
+## Tech Stack
 
-## 🛠️ Tech Stack
-- **Frontend**: React + Vite, Tailwind CSS, QuaggaJS, Axios
-- **Backend**: Python Flask, UPCItemDB API
-- **Data**: JSON-based harmful ingredients database
+| Layer         | Technologies                                 |
+|---------------|----------------------------------------------|
+| **Frontend**  | React.js, Tailwind CSS                       |
+| **Backend**   | Flask (Python)                               |
+| **Barcode**   | QuaggaJS                                     |
+| **APIs**      | INCI Beauty API, Gemini AI, Serp API         |
+| **Database**  | JSON (for ingredient safety classification)  |
+| **Tools**     | Git, GitHub, VS Code, Postman                |
+
+---
+
+## How It Works
+
+1. User scans a product's barcode through the camera
+2. The barcode is sent to the backend, which retrieves product and ingredient data via the INCI Beauty API
+3. The backend compares ingredients against a categorized JSON database of harmful substances
+4. Gemini AI and Serp API are used to suggest cleaner alternatives and skincare advice
+5. A personalized report is generated based on the user's skin type and sensitivities
+
+---
+
