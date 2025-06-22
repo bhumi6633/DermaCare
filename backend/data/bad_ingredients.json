@@ -1,122 +1,149 @@
 {
-  "parabens": {
-    "description": "Preservatives that can disrupt hormones and cause skin irritation",
-    "weightage": 8,
-    "severity": "HIGH",
-    "ingredients": [
-      "methylparaben",
-      "ethylparaben",
-      "propylparaben",
-      "butylparaben",
-      "isobutylparaben",
-      "isopropylparaben"
-    ]
-  },
-  "sulfates": {
-    "description": "Harsh detergents that strip natural oils and cause irritation",
+  "Formaldehyde releasers": {
+    "description": "Preservatives that may release formaldehyde, a known carcinogen and strong allergen",
     "weightage": 6,
-    "severity": "MODERATE",
+    "severity": "CRITICAL",
     "ingredients": [
-      "sodium lauryl sulfate",
-      "sodium laureth sulfate",
-      "ammonium lauryl sulfate",
-      "ammonium laureth sulfate",
-      "sodium myreth sulfate"
+      "DMDM Hydantoin",
+      "Imidazolidinyl Urea",
+      "Diazolidinyl Urea",
+      "Quaternium-15",
+      "Bronopol",
+      "Methenamine"
     ]
   },
-  "alcohols": {
-    "description": "Drying alcohols that can cause skin irritation and premature aging",
+  "Parabens": {
+    "description": "Preservatives suspected of disrupting hormones and linked to breast cancer in studies",
     "weightage": 5,
-    "severity": "MODERATE",
-    "ingredients": [
-      "denatured alcohol",
-      "ethyl alcohol",
-      "isopropyl alcohol",
-      "benzyl alcohol",
-      "methanol",
-      "sd alcohol"
-    ]
-  },
-  "phthalates": {
-    "description": "Plasticizers that can disrupt hormones and cause reproductive issues",
-    "weightage": 12,
-    "severity": "CRITICAL",
-    "ingredients": [
-      "dibutyl phthalate",
-      "diethyl phthalate",
-      "dimethyl phthalate",
-      "diethylhexyl phthalate"
-    ]
-  },
-  "formaldehyde": {
-    "description": "Carcinogenic preservative that can cause skin irritation and allergies",
-    "weightage": 15,
-    "severity": "CRITICAL",
-    "ingredients": [
-      "formaldehyde",
-      "formalin",
-      "methylene glycol",
-      "quaternium-15",
-      "dmdm hydantoin",
-      "imidazolidinyl urea",
-      "diazolidinyl urea"
-    ]
-  },
-  "triclosan": {
-    "description": "Antibacterial agent that can disrupt hormones and cause skin irritation",
-    "weightage": 10,
     "severity": "HIGH",
     "ingredients": [
-      "triclosan",
-      "triclocarban"
+      "Methylparaben",
+      "Ethylparaben",
+      "Propylparaben",
+      "Butylparaben",
+      "Isobutylparaben"
     ]
   },
-  "retinoids": {
-    "description": "Vitamin A derivatives that can cause severe irritation and sun sensitivity",
-    "weightage": 7,
+  "Phthalates": {
+    "description": "Used in fragrances; linked to reproductive toxicity and hormone disruption",
+    "weightage": 6,
+    "severity": "CRITICAL",
+    "ingredients": [
+      "Diethyl Phthalate",
+      "Dibutyl Phthalate"
+    ]
+  },
+  "Chemical UV filters": {
+    "description": "Sunscreen agents that may disrupt hormones or irritate skin",
+    "weightage": 5,
     "severity": "HIGH",
     "ingredients": [
-      "retinol",
-      "retinyl palmitate",
-      "retinyl acetate",
-      "tretinoin",
-      "isotretinoin"
+      "Oxybenzone",
+      "Octocrylene",
+      "Homosalate",
+      "Ethylhexyl Methoxycinnamate",
+      "Butyl Methoxydibenzoylmethane",
+      "Benzophenone-3"
     ]
   },
-  "fragrances": {
-    "description": "Synthetic fragrances that can cause allergies and skin irritation",
+  "BHA/BHT": {
+    "description": "Synthetic antioxidants flagged for potential cancer and endocrine disruption",
+    "weightage": 6,
+    "severity": "CRITICAL",
+    "ingredients": [
+      "Butylated Hydroxyanisole",
+      "Butylated Hydroxytoluene"
+    ]
+  },
+  "Coal tar dyes": {
+    "description": "Colorants potentially contaminated with heavy metals or carcinogens",
+    "weightage": 6,
+    "severity": "CRITICAL",
+    "ingredients": [
+      "CI 19140",
+      "CI 17200",
+      "CI 42090",
+      "FD&C Red No. 40",
+      "FD&C Blue No. 1"
+    ]
+  },
+  "PEGs": {
+    "description": "Emulsifiers that may contain impurities like 1,4-dioxane (a possible carcinogen)",
     "weightage": 4,
-    "severity": "LOW",
+    "severity": "MODERATE",
     "ingredients": [
-      "fragrance",
-      "parfum",
-      "perfume",
-      "synthetic fragrance"
+      "PEG-8 Laurate",
+      "PEG-100 Stearate",
+      "PEG-40 Hydrogenated Castor Oil",
+      "PEG-20 Glyceryl Triisostearate"
     ]
   },
-  "mineral_oil": {
-    "description": "Petroleum-derived oil that can clog pores and cause breakouts",
-    "weightage": 3,
-    "severity": "LOW",
+  "Ethanolamines": {
+    "description": "May form nitrosamines, linked to cancer risk",
+    "weightage": 5,
+    "severity": "HIGH",
     "ingredients": [
-      "mineral oil",
-      "petrolatum",
-      "petroleum jelly",
-      "paraffin oil"
+      "Triethanolamine",
+      "Diethanolamine",
+      "Monoethanolamine"
     ]
   },
-  "artificial_colors": {
-    "description": "Synthetic dyes that can cause skin irritation and allergies",
+  "Fragrance": {
+    "description": "Catch-all term that may hide allergens and hormone-disrupting chemicals",
+    "weightage": 2,
+    "severity": "LOW",
+    "ingredients": [
+      "Parfum",
+      "Fragrance",
+      "Aroma"
+    ]
+  },
+  "Phenoxyethanol": {
+    "description": "Common preservative that may irritate eyes and skin at high concentrations",
+    "weightage": 2,
+    "severity": "LOW",
+    "ingredients": [
+      "Phenoxyethanol"
+    ]
+  },
+  "Silicones": {
+    "description": "Can clog pores and cause buildup on sensitive skin",
+    "weightage": 4,
+    "severity": "MODERATE",
+    "ingredients": [
+      "Dimethicone",
+      "Cyclopentasiloxane",
+      "Cyclotetrasiloxane",
+      "Dimethiconol"
+    ]
+  },
+  "Sulfates": {
+    "description": "Cleansers that can dry or irritate the skin",
     "weightage": 5,
     "severity": "MODERATE",
     "ingredients": [
-      "fd&c red no. 40",
-      "fd&c blue no. 1",
-      "fd&c yellow no. 5",
-      "fd&c yellow no. 6",
-      "ci 19140",
-      "ci 42090",
-      "ci 15985"
+      "Sodium Laureth Sulfate",
+      "Sodium Lauryl Sulfate",
+      "Ammonium Lauryl Sulfate"
+    ]
+  },
+  "Talc": {
+    "description": "May be contaminated with asbestos unless purified",
+    "weightage": 5,
+    "severity": "HIGH",
+    "ingredients": [
+      "Talc"
+    ]
+  },
+  "Preservatives (low risk)": {
+    "description": "Generally safe preservatives but may irritate sensitive skin",
+    "weightage": 2,
+    "severity": "LOW",
+    "ingredients": [
+      "Sodium Benzoate",
+      "Benzoic Acid",
+      "Potassium Sorbate",
+      "Chlorphenesin"
     ]
   }
-} 
+}
