@@ -9,8 +9,8 @@ import time
 import base64
 
 # INCI Beauty API credentials
-ACCESS_KEY = "df9e2b9cd6a94aa0"
-SECRET_KEY = "QlIbnGvMx7ZceKenANc9Cm7XSLuHb64a"
+ACCESS_KEY = "9ed19989ddfc405f"
+SECRET_KEY = "UlJ5HySMyBKMdp0ME0CVkhKe2kriI/U0"
 
 # Gemini API Key for AI recommendations
 GEMINI_API_KEY = "AIzaSyCTHv7Z6IIMxp78tksAZ_y14RPc0FJn7SU"

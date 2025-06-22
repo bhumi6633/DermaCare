@@ -1,292 +1,146 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import BarcodeScanner from '../components/BarcodeScanner'
-import axios from 'axios'
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import BarcodeScanner from '../components/BarcodeScanner';
+import axios from 'axios';
 
 const Home = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [manualIngredients, setManualIngredients] = useState('')
-  const [activeTab, setActiveTab] = useState('scanner') // 'scanner' or 'manual'
-  const [hasScanned, setHasScanned] = useState(false) // Prevent multiple scans
-  const [userProfile, setUserProfile] = useState(null)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:5000'
+  const API_BASE_URL = 'http://localhost:5000';
 
-  // Load user profile from localStorage or location state
   useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile')
-    if (savedProfile) {
-      setUserProfile(JSON.parse(savedProfile))
+    const user = localStorage.getItem('dermascan-user');
+    if (!user) {
+      navigate('/login');
+    } else {
+      // Load the profile for the logged-in user
+      const savedProfile = localStorage.getItem(`dermascan-profile-${user}`);
+      if (savedProfile) {
+        setUserProfile(JSON.parse(savedProfile));
+      }
     }
-    
-    // Check if profile was passed from Profile page
+
+    // Check if profile was passed from Profile page after an update
     if (location.state?.userProfile) {
-      setUserProfile(location.state.userProfile)
-      localStorage.setItem('userProfile', JSON.stringify(location.state.userProfile))
+      setUserProfile(location.state.userProfile);
     }
-  }, [location.state])
+  }, [location.state, navigate]);
 
   const analyzeProduct = async (data) => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
+    setShowScanner(false); // Hide scanner while analyzing
     
-    // Add user profile to request if available
     if (userProfile) {
-      data.user_profile = userProfile
+      data.user_profile = userProfile;
     }
-    
     try {
-      // console.log("Scanned barcode:", barcode)
-      const response = await axios.post(`${API_BASE_URL}/analyze`, data)
-      
+      const response = await axios.post(`${API_BASE_URL}/analyze`, data);
       if (response.data.success) {
-        // Navigate to results page with analysis data
         navigate('/results', {
           state: {
             analysis: response.data.analysis,
             productInfo: response.data.product_info,
             ingredientsAnalyzed: response.data.ingredients_analyzed,
-            userProfile: userProfile
-          }
-        })
+            userProfile: userProfile,
+          },
+        });
       } else {
-        setError('Analysis failed. Please try again.')
+        setError(response.data.error || 'Analysis failed. Please try again.');
       }
     } catch (err) {
-      console.error('API Error:', err)
-      
+      console.error('API Error:', err);
+      const errorMsg = err.response?.data?.error || 'An unexpected error occurred.';
       if (err.response?.status === 404) {
-        setError('Product not found. Please check the barcode or try manual input.')
-      } else if (err.response?.status === 400) {
-        setError('Invalid data provided. Please check your input.')
+        setError(`Product not found for barcode: ${data.barcode}. Please check the code or try another product.`);
       } else {
-        setError('Network error. Please check your connection and try again.')
+        setError(errorMsg);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleBarcodeDetected = async (scanData) => {
-    if (hasScanned) return
-    setHasScanned(true)
-    
-    // scanData now contains: { barcode, analysis, product_info, ingredients_analyzed }
-    console.log("Scan data received:", scanData)
-    
-    if (scanData.analysis) {
-      // Analysis was successful, navigate to results
-      navigate('/results', {
-        state: {
-          analysis: scanData.analysis,
-          productInfo: scanData.product_info,
-          ingredientsAnalyzed: scanData.ingredients_analyzed,
-          userProfile: userProfile
-        }
-      })
-    } else {
-      // Handle case where analysis failed but barcode was detected
-      setError('Barcode detected but analysis failed. Please try again.')
-    }
-    
-    // Allow scanning again after 3 seconds
-    setTimeout(() => setHasScanned(false), 3000);
+  const handleBarcodeDetected = (barcode) => {
+    if (loading) return;
+    analyzeProduct({ barcode });
   };
   
+  const handleScannerError = (errorMessage) => {
+    setError(errorMessage);
+    setShowScanner(false);
+  };
 
-  const handleManualSubmit = (e  ) =>   {
-    e.preventDefault()
-    
-    if (!manualIngredients.trim()) {
-      setError('Please enter ingredients to analyze.')
-      return
-    }
-    
-    console.log('Analyzing manual ingredients')
-    analyzeProduct({ ingredients: manualIngredients })
-  }
-
-  const handleScannerError = (error) => {
-    setError(error)
+  const toggleScanner = () => {
+    setError(null);
+    setShowScanner(prev => !prev);
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Welcome to DermaScan
+    <div className="min-h-screen bg-sky-100 flex items-center justify-center p-4 bg-cover bg-center bg-scanner-bg">
+      {/* This is where you can insert your background image class */}
+      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 space-y-6">
+        
+        <h1 className="font-quicksand text-4xl font-bold text-center text-custom-pink uppercase tracking-wider">
+          Scan Product
         </h1>
-        <p className="text-xl text-gray-600 mb-2">
-          Scan barcodes or input ingredients to check skincare safety
-        </p>
-        <p className="text-gray-500">
-          Get instant analysis of harmful ingredients in your skincare products
-        </p>
-      </div>
-
-      {/* Profile Status */}
-      {userProfile && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-800 font-medium">Personalized Analysis Enabled</p>
-              <p className="text-green-600 text-sm">
-                Age: {userProfile.age.replace('_', '-')} | Gender: {userProfile.gender} | Skin: {userProfile.skinType}
-              </p>
+        
+        <div className="relative h-80 flex items-center justify-center rounded-2xl overflow-hidden bg-gray-900">
+          {showScanner ? (
+            <BarcodeScanner 
+              onBarcodeDetected={handleBarcodeDetected}
+              onError={handleScannerError}
+            />
+          ) : (
+            <div className="text-center">
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-pink mx-auto"></div>
+                  <p className="mt-4 text-white uppercase font-quicksand font-bold">Analyzing Your Product...</p>
+                </>
+              ) : (
+                <p className="text-gray-500">Camera view will appear here</p>
+              )}
             </div>
-            <button
-              onClick={() => navigate('/profile')}
-              className="text-green-600 hover:text-green-800 text-sm underline"
-            >
-              Edit Profile
-            </button>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Profile Setup Prompt */}
-      {!userProfile && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-800 font-medium">Get Personalized Recommendations</p>
-              <p className="text-blue-600 text-sm">
-                Set up your profile to receive tailored ingredient analysis and product recommendations
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/profile')}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-            >
-              Set Up Profile
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Tab Navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
-          <button
-            onClick={() => setActiveTab('scanner')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
-              activeTab === 'scanner'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            📷 Barcode Scanner
-          </button>
-          <button
-            onClick={() => setActiveTab('manual')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
-              activeTab === 'manual'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            ✏️ Manual Input
-          </button>
-        </div>
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700 mr-2"></div>
-            Analyzing product...
-          </div>
-        </div>
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-700">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="text-red-500 text-sm mt-2 hover:text-red-700"
-          >
-            ✕ Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="card">
-        {activeTab === 'scanner' ? (
-          <BarcodeScanner 
-            onBarcodeDetected={handleBarcodeDetected}
-            onError={handleScannerError}
-            userProfile={userProfile}
-          />
-        ) : (
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Manual Ingredients Input
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Paste or type the ingredients list from your skincare product
-            </p>
-            
-            <form onSubmit={handleManualSubmit} className="max-w-2xl mx-auto">
-              <textarea
-                value={manualIngredients}
-                onChange={(e) => setManualIngredients(e.target.value)}
-                placeholder="Enter ingredients here (e.g., Water, Glycerin, Sodium Lauryl Sulfate, Methylparaben...)"
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                disabled={loading}
-              />
-              
-              <button
-                type="submit"
-                disabled={loading || !manualIngredients.trim()}
-                className="btn-primary mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                🔍 Analyze Ingredients
-              </button>
-            </form>
-            
-            <div className="mt-6 text-sm text-gray-500">
-              <p>💡 Tip: Copy ingredients from the product label or packaging</p>
-            </div>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative text-center" role="alert">
+            <span className="block sm:inline">{error}</span>
+            <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>
+              <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+            </span>
           </div>
         )}
-      </div>
 
-      {/* Features */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="text-center">
-          <div className="text-3xl mb-2">🔍</div>
-          <h3 className="font-semibold text-gray-800 mb-2">Instant Scanning</h3>
-          <p className="text-gray-600 text-sm">
-            Scan barcodes with your camera for quick product lookup
-          </p>
-        </div>
+        <button
+          onClick={toggleScanner}
+          disabled={loading}
+          className="w-full font-quicksand font-bold text-2xl text-white bg-custom-pink rounded-xl p-4 border-b-4 border-pink-400 transition-all duration-150 uppercase
+          disabled:bg-gray-400 disabled:border-gray-500 disabled:cursor-not-allowed
+          hover:bg-pink-400 active:scale-95 active:border-b-0"
+        >
+          {showScanner ? 'Stop Scanner' : 'Start Scanner'}
+        </button>
         
-        <div className="text-center">
-          <div className="text-3xl mb-2">🧪</div>
-          <h3 className="font-semibold text-gray-800 mb-2">Ingredient Analysis</h3>
-          <p className="text-gray-600 text-sm">
-            Check against 50+ harmful ingredients in our database
-          </p>
+        <div className="text-center mt-4">
+            <button
+              onClick={() => navigate('/profile')}
+              className="font-quicksand font-bold text-md text-custom-pink hover:text-pink-500 transition-colors uppercase"
+            >
+              {userProfile ? 'Edit Profile' : 'Create Profile for Better Analysis'}
+            </button>
         </div>
-        
-        <div className="text-center">
-          <div className="text-3xl mb-2">📊</div>
-          <h3 className="font-semibold text-gray-800 mb-2">Detailed Results</h3>
-          <p className="text-gray-600 text-sm">
-            Get comprehensive safety reports with ingredient breakdowns
-          </p>
-        </div>
+
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home 
+export default Home;

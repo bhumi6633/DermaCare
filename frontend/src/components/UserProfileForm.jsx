@@ -1,16 +1,23 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const UserProfileForm = ({ onProfileSubmit, initialProfile = null }) => {
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(initialProfile || {
     age: '',
     gender: '',
     skinType: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (profile.age && profile.gender && profile.skinType) {
-      onProfileSubmit(profile)
+      setIsSubmitting(true)
+      setTimeout(() => {
+        onProfileSubmit(profile)
+        setIsSubmitting(false)
+      }, 300)
     }
   }
 
@@ -22,77 +29,79 @@ const UserProfileForm = ({ onProfileSubmit, initialProfile = null }) => {
   }
 
   return (
-    <div className="card">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        Personalize Your Experience
+    <div className="bg-stone-50 rounded-3xl p-8 w-full max-w-md border-4 border-white">
+      <h2 className="font-quicksand font-bold text-5xl text-center text-custom-pink mb-8 uppercase">
+        Design Your Profile
       </h2>
-      <p className="text-gray-600 mb-6">
-        Help us provide personalized skincare recommendations based on your profile
-      </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Age Group */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Age Group
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Input fields */}
+        {[
+          {
+            name: 'age',
+            value: profile.age,
+            options: [
+              { value: '', label: 'Select Age Group' },
+              { value: 'under_18', label: 'Under 18' },
+              { value: '18_32', label: '18-32' },
+              { value: '32_56', label: '32-56' },
+              { value: '56_plus', label: '56+' },
+            ],
+          },
+          {
+            name: 'gender',
+            value: profile.gender,
+            options: [
+              { value: '', label: 'Select Gender' },
+              { value: 'female', label: 'Female' },
+              { value: 'male', label: 'Male' },
+              { value: 'other', label: 'Other' },
+            ],
+          },
+          {
+            name: 'skinType',
+            value: profile.skinType,
+            options: [
+              { value: '', label: 'Select Skin Type' },
+              { value: 'oily', label: 'Oily' },
+              { value: 'dry', label: 'Dry' },
+              { value: 'combination', label: 'Combination' },
+            ],
+          },
+        ].map((field) => (
           <select
-            value={profile.age}
-            onChange={(e) => handleChange('age', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            key={field.name}
+            value={field.value}
+            onChange={(e) => handleChange(field.name, e.target.value)}
+            className="w-full font-quicksand font-bold text-xl bg-white border-2 border-custom-yellow rounded-xl p-3 focus:ring-2 focus:ring-custom-pink focus:border-transparent outline-none text-center text-custom-pink uppercase"
             required
           >
-            <option value="">Select age group</option>
-            <option value="under_18">Under 18</option>
-            <option value="18_32">18-32</option>
-            <option value="32_56">32-56</option>
-            <option value="56_plus">56+</option>
+            {field.options.map((option) => (
+              <option key={option.value} value={option.value} className="text-gray-700">
+                {option.label}
+              </option>
+            ))}
           </select>
-        </div>
-
-        {/* Gender */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Gender
-          </label>
-          <select
-            value={profile.gender}
-            onChange={(e) => handleChange('gender', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select gender</option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        {/* Skin Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Skin Type
-          </label>
-          <select
-            value={profile.skinType}
-            onChange={(e) => handleChange('skinType', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select skin type</option>
-            <option value="oily">Oily</option>
-            <option value="dry">Dry</option>
-            <option value="combination">Combination</option>
-          </select>
-        </div>
+        ))}
 
         <button
           type="submit"
-          className="w-full btn-primary"
+          className={`w-full font-quicksand font-bold text-3xl text-white bg-custom-pink rounded-xl p-3 border-b-4 border-pink-400 transition-all duration-150 uppercase
+            ${isSubmitting ? 'transform scale-95 border-b-0' : 'hover:bg-pink-400 active:scale-95 active:border-b-0'}
+          `}
         >
-          Save Profile & Continue
+          Submit
         </button>
       </form>
+      
+      <div className="text-center mt-6">
+        <button
+          onClick={() => navigate('/scanner')}
+          className="font-quicksand font-bold text-lg text-custom-pink hover:text-pink-500 transition-colors uppercase"
+        >
+          Skip and go to scanner
+        </button>
+      </div>
     </div>
   )
 }

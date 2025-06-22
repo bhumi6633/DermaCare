@@ -1,5 +1,7 @@
+const colors = require('tailwindcss/colors')
+
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,22 +9,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f0f9ff',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-        },
-        success: {
-          50: '#f0fdf4',
-          500: '#22c55e',
-          600: '#16a34a',
-        },
-        danger: {
-          50: '#fef2f2',
-          500: '#ef4444',
-          600: '#dc2626',
-        }
+        primary: colors.sky,
+        success: colors.green,
+        danger: colors.red,
+        'custom-pink': '#f48fb1',
+        'custom-yellow': '#feeca4',
+        'custom-blue': '#a7d8f9',
+      },
+      fontFamily: {
+        'quicksand': ['"Quicksand"', 'sans-serif'],
+        'gloria': ['"Gloria Hallelujah"', 'cursive'],
+      },
+      backgroundImage: {
+        'profile-bg': "url('/src/assets/profile-bg.png')",
+        'scanner-bg': "url('/src/assets/scanner-bg.png')",
+        'login-bg': "url('/src/assets/login-bg.png')",
       }
     },
   },

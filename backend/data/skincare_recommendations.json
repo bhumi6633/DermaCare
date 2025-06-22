@@ -1,0 +1,70 @@
+{
+  "oily": {
+    "cleanser": [
+      "CeraVe Foaming Facial Cleanser",
+      "La Roche-Posay Effaclar Gel Cleanser",
+      "Neutrogena Oil-Free Acne Wash"
+    ],
+    "moisturizer": [
+      "CeraVe PM Facial Moisturizing Lotion",
+      "Neutrogena Oil-Free Moisture",
+      "La Roche-Posay Effaclar Mat"
+    ],
+    "sunscreen": [
+      "Neutrogena Oil-Free Dry-Touch Sunscreen",
+      "La Roche-Posay Anthelios Clear Skin",
+      "CeraVe AM Facial Moisturizing Lotion"
+    ]
+  },
+  "dry": {
+    "cleanser": [
+      "CeraVe Hydrating Facial Cleanser",
+      "La Roche-Posay Toleriane Hydrating Cleanser",
+      "Cetaphil Gentle Skin Cleanser"
+    ],
+    "moisturizer": [
+      "CeraVe Moisturizing Cream",
+      "La Roche-Posay Double Repair Face Moisturizer",
+      "Cetaphil Moisturizing Cream"
+    ],
+    "sunscreen": [
+      "CeraVe AM Facial Moisturizing Lotion",
+      "La Roche-Posay Anthelios Melt-in Milk",
+      "Neutrogena Ultra Sheer Dry-Touch"
+    ]
+  },
+  "combination": {
+    "cleanser": [
+      "CeraVe Foaming Facial Cleanser",
+      "La Roche-Posay Toleriane Purifying Cleanser",
+      "Neutrogena Ultra Gentle Daily Cleanser"
+    ],
+    "moisturizer": [
+      "CeraVe PM Facial Moisturizing Lotion",
+      "La Roche-Posay Double Repair Face Moisturizer",
+      "Neutrogena Oil-Free Moisture"
+    ],
+    "sunscreen": [
+      "CeraVe AM Facial Moisturizing Lotion",
+      "La Roche-Posay Anthelios Clear Skin",
+      "Neutrogena Ultra Sheer Dry-Touch"
+    ]
+  },
+  "sensitive": {
+    "cleanser": [
+      "CeraVe Hydrating Facial Cleanser",
+      "La Roche-Posay Toleriane Hydrating Cleanser",
+      "Cetaphil Gentle Skin Cleanser"
+    ],
+    "moisturizer": [
+      "CeraVe Moisturizing Cream",
+      "La Roche-Posay Toleriane Double Repair",
+      "Cetaphil Moisturizing Cream"
+    ],
+    "sunscreen": [
+      "CeraVe AM Facial Moisturizing Lotion",
+      "La Roche-Posay Anthelios Mineral",
+      "Neutrogena Sensitive Skin Sunscreen"
+    ]
+  }
+} 

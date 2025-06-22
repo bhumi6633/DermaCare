@@ -69,3 +69,4 @@ Respond only in this exact JSON format:
             raise Exception(f"Invalid JSON from Gemini: {e}")
         except Exception as e:
             raise Exception(f"Gemini analysis failed: {e}")
+ 
