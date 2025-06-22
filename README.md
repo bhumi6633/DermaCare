@@ -6,11 +6,11 @@
 
 ## Features
 
-- 🔍 **Barcode Scanning** – Scan cosmetic/skincare product barcodes in real time using your device camera  
-- 🧪 **Ingredient Analysis** – Automatically flag ingredients like parabens, phthalates, and formaldehyde releasers based on safety categories  
-- 🧠 **AI-Powered Recommendations** – Suggest safer alternatives and skincare tips using Gemini AI and Serp API  
-- 👤 **User Personalization** – Generate safety ratings based on user-defined skin type and sensitivities  
-- 📋 **Product Reports** – Provide clear reports including ingredient descriptions, severity scores, and explanations
+-  **Barcode Scanning** – Scan cosmetic/skincare product barcodes in real time using your device camera  
+-  **Ingredient Analysis** – Automatically flag ingredients like parabens, phthalates, and formaldehyde releasers based on safety categories  
+-  **AI-Powered Recommendations** – Suggest safer alternatives and skincare tips using Gemini AI and Serp API  
+-  **User Personalization** – Generate safety ratings based on user-defined skin type and sensitivities  
+-  **Product Reports** – Provide clear reports including ingredient descriptions, severity scores, and explanations
 
 ---
 
