@@ -6,6 +6,24 @@ const Results = () => {
   const navigate = useNavigate()
   const { analysis, productInfo, ingredientsAnalyzed } = location.state || {}
 
+  // Debug logging
+  console.log('Results component - analysis:', analysis)
+  console.log('Results component - productInfo:', productInfo)
+  console.log('Results component - serpapi_recommendations:', analysis?.serpapi_recommendations)
+  
+  // Additional debugging for SerpAPI recommendations
+  if (analysis?.serpapi_recommendations) {
+    console.log('🔍 SerpAPI recommendations details:')
+    analysis.serpapi_recommendations.forEach((product, idx) => {
+      console.log(`Product ${idx + 1}:`, {
+        title: product.title,
+        link: product.link,
+        price: product.price,
+        source: product.source
+      })
+    })
+  }
+
   // If no analysis data, redirect to home
   if (!analysis) {
     React.useEffect(() => {
@@ -46,13 +64,20 @@ const Results = () => {
       {productInfo && (
         <div className="card mb-6">
           <div className="flex items-center space-x-4">
-            {productInfo.image && (
+            {productInfo.image ? (
               <img 
                 src={productInfo.image} 
                 alt={productInfo.title}
                 className="w-20 h-20 object-cover rounded-lg"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
               />
-            )}
+            ) : null}
+            <div className={`w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center ${productInfo.image ? 'hidden' : 'block'}`}>
+              <span className="text-gray-500 text-xs text-center">No Image</span>
+            </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-800">
                 {productInfo.title}
@@ -303,6 +328,160 @@ const Results = () => {
             <p className="text-yellow-800">
               <strong>Tip:</strong> Create a user profile to get personalized recommendations! 
               Go to your profile page to set up your age, gender, and skin type for customized advice.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* SerpAPI Product Recommendations */}
+      {analysis.serpapi_recommendations && analysis.serpapi_recommendations.length > 0 && (
+        <div className="card mb-6">
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold text-green-700">
+              🛒 Better Alternatives
+            </h3>
+            <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+              Live Search
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {analysis.serpapi_recommendations.map((product, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                {product.link ? (
+                  <a 
+                    href={product.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex items-start space-x-3">
+                      {product.image && (
+                        <img 
+                          src={product.image} 
+                          alt={product.title}
+                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-800 text-sm mb-1 line-clamp-2 hover:text-blue-600 transition-colors">
+                          {product.title}
+                        </h4>
+                        
+                        {product.price && (
+                          <div className="text-green-600 font-semibold text-sm mb-1">
+                            {product.price}
+                          </div>
+                        )}
+                        
+                        {product.rating && (
+                          <div className="flex items-center space-x-1 mb-2">
+                            <div className="flex text-yellow-400">
+                              {[...Array(5)].map((_, i) => (
+                                <span key={i} className={i < Math.floor(parseFloat(product.rating)) ? 'text-yellow-400' : 'text-gray-300'}>
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                            <span className="text-gray-600 text-xs">
+                              {product.rating} {product.reviews && `(${product.reviews})`}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {product.source && (
+                          <div className="text-gray-500 text-xs mb-2">
+                            Available at: {product.source}
+                          </div>
+                        )}
+                        
+                        {product.link && (
+                          <div className="inline-block bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 transition-colors">
+                            {product.link.includes('google.com/shopping') ? 'View on Google Shopping →' : 'View Product →'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                ) : (
+                  <div className="flex items-start space-x-3">
+                    {product.image && (
+                      <img 
+                        src={product.image} 
+                        alt={product.title}
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-800 text-sm mb-1 line-clamp-2">
+                        {product.title}
+                      </h4>
+                      
+                      {product.price && (
+                        <div className="text-green-600 font-semibold text-sm mb-1">
+                          {product.price}
+                        </div>
+                      )}
+                      
+                      {product.rating && (
+                        <div className="flex items-center space-x-1 mb-2">
+                          <div className="flex text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={i < Math.floor(parseFloat(product.rating)) ? 'text-yellow-400' : 'text-gray-300'}>
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-gray-600 text-xs">
+                            {product.rating} {product.reviews && `(${product.reviews})`}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {product.source && (
+                        <div className="text-gray-500 text-xs mb-2">
+                          Available at: {product.source}
+                        </div>
+                      )}
+                      
+                      <div className="text-gray-400 text-xs px-3 py-1 rounded bg-gray-100">
+                        Link not available
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            Product recommendations are based on your profile and current product analysis. 
+            Prices and availability may vary.
+          </div>
+        </div>
+      )}
+
+      {/* Debug info for SerpAPI recommendations */}
+      {productInfo && !analysis.serpapi_recommendations && (
+        <div className="card mb-6">
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-700">
+              🛒 Product Recommendations
+            </h3>
+            <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+              Loading...
+            </span>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800">
+              <strong>Note:</strong> Product recommendations are being loaded. This may take a few moments.
+              If recommendations don't appear, try refreshing the page or scanning again.
             </p>
           </div>
         </div>

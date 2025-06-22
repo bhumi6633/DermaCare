@@ -9,11 +9,14 @@ import time
 import base64
 
 # INCI Beauty API credentials
-ACCESS_KEY = "bdcec7e387ab2359"
-SECRET_KEY = "8VDpSzOdEc+JqcUnrYtGHh5B3+XOI0dW"
+ACCESS_KEY = "df9e2b9cd6a94aa0"
+SECRET_KEY = "QlIbnGvMx7ZceKenANc9Cm7XSLuHb64a"
 
 # Gemini API Key for AI recommendations
 GEMINI_API_KEY = "AIzaSyCTHv7Z6IIMxp78tksAZ_y14RPc0FJn7SU"
+
+# SerpAPI Key for product recommendations
+SERPAPI_KEY = "3e61eaca77010dc489451152be4e2402c6d93cc73a360f2f0ce9f2e700a87bf0"
 
 # Initialize Gemini AI for recommendations
 try:
@@ -21,9 +24,9 @@ try:
     genai.configure(api_key=GEMINI_API_KEY)  # type: ignore
     gemini_model = genai.GenerativeModel("gemini-1.5-flash")  # type: ignore
     AI_AVAILABLE = True
-    print("🤖 AI recommendations enabled")
+    print("AI recommendations enabled")
 except Exception as e:
-    print(f"⚠️ AI not available: {e}")
+    print(f"AI not available: {e}")
     AI_AVAILABLE = False
 
 app = Flask(__name__)
@@ -35,7 +38,7 @@ def load_bad_ingredients():
         with open('data/bad_ingredients.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("⚠️ bad_ingredients.json not found.")
+        print("bad_ingredients.json not found.")
         return {}
 
 # Load skincare recommendations
@@ -44,7 +47,7 @@ def load_skincare_recommendations():
         with open('data/skincare_recommendations.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("⚠️ skincare_recommendations.json not found.")
+        print(" skincare_recommendations.json not found.")
         return {}
 
 BAD_INGREDIENTS = load_bad_ingredients()
@@ -129,11 +132,23 @@ def get_product_info_from_incibeauty(ean):
 
             ingredients_str = ", ".join([ing.get('name') or ing.get('official_name') for ing in ingredients_raw if ing.get('name') or ing.get('official_name')])
 
+            product_title = data.get('name', 'Unknown Product')
+            product_brand = data.get('brand', 'Unknown Brand')
+            
+            # Search for product image on the internet
+            product_image = search_product_image(product_title, product_brand)
+            
+            # Fallback to INCI Beauty image if internet search fails
+            if not product_image:
+                product_image = data.get('images', {}).get('image')
+                if product_image:
+                    print(f" Using INCI Beauty image as fallback")
+
             return {
-                'title': data.get('name', 'Unknown Product'),
-                'brand': data.get('brand', 'Unknown Brand'),
+                'title': product_title,
+                'brand': product_brand,
                 'ingredients': ingredients_str,
-                'image': data.get('images', {}).get('image')
+                'image': product_image
             }
 
         else:
@@ -142,6 +157,62 @@ def get_product_info_from_incibeauty(ean):
     except Exception as e:
         print(f"[INCI Beauty] Error: {e}")
 
+    return None
+
+def search_product_image(product_title, product_brand):
+    """Search for product image using SerpAPI image search"""
+    if not SERPAPI_KEY or SERPAPI_KEY == "your_serpapi_key_here":
+        print("SerpAPI key not configured for image search")
+        return None
+    
+    try:
+        # Create search query with brand and product name
+        search_query = f"{product_brand} {product_title}"
+        print(f"Searching for product image: {search_query}")
+        
+        url = "https://serpapi.com/search"
+        params = {
+            "q": search_query,
+            "api_key": SERPAPI_KEY,
+            "engine": "google",
+            "tbm": "isch",  # Image search
+            "num": 3,  # Get first 3 images to try
+            "safe": "active",
+            "img_type": "photo"  # Prefer product photos
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"📊 Image search response keys: {list(data.keys())}")
+            images_results = data.get('images_results', [])
+            
+            print(f"🖼️ Found {len(images_results)} image results")
+            
+            if images_results:
+                # Try to find the best image (prefer original size)
+                for i, img in enumerate(images_results[:3]):
+                    print(f"🔍 Checking image {i+1}: {list(img.keys())}")
+                    
+                    # Prefer images marked as products
+                    is_product = img.get('is_product', False)
+                    image_url = img.get('original') or img.get('thumbnail')
+                    
+                    if image_url:
+                        print(f" Found product image: {image_url[:50]}... (Product: {is_product})")
+                        return image_url
+                
+                print(" No valid images found in search results")
+            else:
+                print(" No images found in search results")
+        else:
+            print(f" Image search failed: {response.status_code}")
+            print(f" Error response: {response.text}")
+            
+    except Exception as e:
+        print(f" Image search error: {e}")
+    
     return None
 
 def get_personalized_analysis(ingredients_list, user_profile):
@@ -228,7 +299,7 @@ def get_personalized_analysis(ingredients_list, user_profile):
         'total_weightage': total_weightage,
         'harmful_ingredients': harmful_found,
         'total_ingredients_checked': len(ingredients_list),
-        'personalized_score': round(personalized_score, 1),
+        'personalized_score': round(personalized_score),
         'score_category': get_score_category(personalized_score),
         'recommendations': recommendations
     }
@@ -245,6 +316,161 @@ def get_score_category(score):
         return "Poor"
     else:
         return "Very Poor"
+
+def get_product_recommendations_serpapi(user_profile, current_product_info):
+    """Get product recommendations using SerpAPI based on user profile and current product"""
+    if not SERPAPI_KEY or SERPAPI_KEY == "your_serpapi_key_here":
+        print(" SerpAPI key not configured")
+        return None
+    
+    try:
+        print(f"🔍 Starting SerpAPI search for product: {current_product_info.get('title', 'Unknown')}")
+        
+        # Build search query based on user profile and current product
+        search_terms = []
+        
+        # Add skin type specific terms (use default if no profile)
+        skin_type = user_profile.get('skinType', 'normal') if user_profile else 'normal'
+        if skin_type == 'dry':
+            search_terms.extend(['hydrating', 'moisturizing', 'gentle'])
+        elif skin_type == 'oily':
+            search_terms.extend(['oil-free', 'non-comedogenic', 'mattifying'])
+        elif skin_type == 'combination':
+            search_terms.extend(['balancing', 'gentle', 'non-irritating'])
+        elif skin_type == 'sensitive':
+            search_terms.extend(['fragrance-free', 'hypoallergenic', 'gentle'])
+        else:
+            # Default for normal skin or no profile
+            search_terms.extend(['gentle', 'effective'])
+        
+        # Add age-specific terms (use default if no profile)
+        age = user_profile.get('age', '18_32') if user_profile else '18_32'
+        if age == 'under_18':
+            search_terms.extend(['teen', 'gentle', 'simple'])
+        elif age == '18_32':
+            search_terms.extend(['anti-aging', 'preventive'])
+        elif age == '32_56':
+            search_terms.extend(['anti-aging', 'mature skin'])
+        elif age == '56_plus':
+            search_terms.extend(['mature skin', 'rich', 'nourishing'])
+        
+        # Determine product type from current product
+        current_product_name = current_product_info.get('title', '').lower()
+        product_type = 'skincare'
+        if 'cleanser' in current_product_name or 'wash' in current_product_name:
+            product_type = 'cleanser'
+        elif 'moisturizer' in current_product_name or 'cream' in current_product_name:
+            product_type = 'moisturizer'
+        elif 'sunscreen' in current_product_name or 'spf' in current_product_name:
+            product_type = 'sunscreen'
+        elif 'serum' in current_product_name:
+            product_type = 'serum'
+        
+        # Build search query
+        search_query = f"best {product_type} for {skin_type} skin"
+        if search_terms:
+            search_query += f" {' '.join(search_terms[:3])}"  # Limit to 3 terms
+        
+        print(f"🔍 Search query: {search_query}")
+        
+        # SerpAPI search
+        url = "https://serpapi.com/search"
+        params = {
+            "q": search_query,
+            "api_key": SERPAPI_KEY,
+            "engine": "google",
+            "num": 4,  # Get 4 recommendations
+            "tbm": "shop"  # Shopping tab for Google
+        }
+        
+        print(f"🌐 Making SerpAPI request with params: {params}")
+        response = requests.get(url, params=params, timeout=10)
+        
+        print(f"📡 SerpAPI Response Status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"❌ SerpAPI error response: {response.text}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"📊 Full SerpAPI response keys: {list(data.keys())}")
+            
+            # Try different result fields
+            shopping_results = (
+                data.get('shopping_results', []) or 
+                data.get('organic_results', []) or 
+                data.get('results', [])
+            )
+            
+            print(f"📊 SerpAPI returned {len(shopping_results)} shopping results")
+            
+            # Debug: Print first result structure
+            if shopping_results:
+                print(f"🔍 First result structure: {json.dumps(shopping_results[0], indent=2)}")
+            
+            recommendations = []
+            for result in shopping_results[:4]:  # Limit to 4 results
+                # Try multiple possible link fields
+                product_link = (
+                    result.get('product_link') or  # Primary field from SerpAPI
+                    result.get('link') or 
+                    result.get('url') or 
+                    result.get('product_url') or
+                    result.get('shopping_url') or
+                    result.get('displayed_link') or
+                    result.get('source')
+                )
+                
+                # Try to get direct merchant link from SerpAPI product API
+                direct_link = None
+                if result.get('serpapi_product_api'):
+                    try:
+                        print(f"🔍 Fetching detailed product info from: {result.get('serpapi_product_api')}")
+                        product_response = requests.get(result.get('serpapi_product_api'), timeout=5)
+                        if product_response.status_code == 200:
+                            product_data = product_response.json()
+                            # Look for merchant links in the detailed product data
+                            if 'merchants' in product_data:
+                                for merchant in product_data['merchants']:
+                                    if merchant.get('link'):
+                                        direct_link = merchant['link']
+                                        print(f" Found direct merchant link: {direct_link}")
+                                        break
+                    except Exception as e:
+                        print(f" Could not fetch detailed product info: {e}")
+                
+                # Use direct merchant link if available, otherwise use product_link
+                final_link = direct_link or product_link
+                
+                # Fallback: Create a Google search link if no direct link is available
+                if not final_link and result.get('title'):
+                    product_title = result.get('title', '')
+                    # Clean the title for search
+                    search_title = product_title.replace('&', 'and').replace('®', '').replace('™', '')
+                    final_link = f"https://www.google.com/search?q={search_title.replace(' ', '+')}+buy+online"
+                    print(f"🔍 Created fallback search link for: {product_title}")
+                
+                recommendation = {
+                    'title': result.get('title', ''),
+                    'price': result.get('price', ''),
+                    'image': result.get('thumbnail', '') or result.get('image', ''),
+                    'link': final_link,
+                    'rating': result.get('rating', ''),
+                    'reviews': result.get('reviews', ''),
+                    'source': result.get('source', '') or result.get('merchant', '')
+                }
+                
+                print(f" Product: {recommendation['title'][:50]}... | Link: {final_link[:50] if final_link else 'None'}...")
+                recommendations.append(recommendation)
+            
+            print(f" Processed {len(recommendations)} recommendations")
+            return recommendations
+        else:
+            print(f" SerpAPI error: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f" SerpAPI recommendations failed: {e}")
+        return None
 
 def get_personalized_recommendations(user_profile):
     """Get AI-powered personalized skincare recommendations based on user profile"""
@@ -279,14 +505,14 @@ Focus on specific product recommendations and actionable tips for this user's pr
 
             response = gemini_model.generate_content(prompt)
             ai_recommendations = json.loads(response.text)
-            print(f"✅ AI recommendations generated successfully")
+            print(f" AI recommendations generated successfully")
             return ai_recommendations
         except Exception as e:
-            print(f"❌ AI recommendations failed: {e}")
+            print(f" AI recommendations failed: {e}")
             # Fall through to basic recommendations
     
     # Fallback to basic recommendations based on user profile
-    print(f"📝 Using fallback recommendations for {age}, {gender}, {skin_type}")
+    print(f" Using fallback recommendations for {age}, {gender}, {skin_type}")
     
     fallback_recommendations = {
         "products": [],
@@ -362,7 +588,7 @@ def health_check():
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        'message': '🧴 DermaScan API Running',
+        'message': ' DermaScan API Running',
         'endpoints': ['/analyze (POST)', '/health'],
         'harmful_ingredients_loaded': len(BAD_INGREDIENTS)
     })
@@ -379,21 +605,21 @@ def analyze_product():
 
         if barcode and len(barcode) == 13 and barcode.startswith("0"):
             barcode = barcode[1:]
-            print(f"🛠 Trimmed barcode to 12 digits: {barcode}")
+            print(f" Trimmed barcode to 12 digits: {barcode}")
 
         if barcode:
-            print(f"🔍 Scanning barcode: {barcode}")
+            print(f" Scanning barcode: {barcode}")
             
             product_info = get_product_info_from_incibeauty(barcode)
             print(f"PRODUCT INFO {product_info}")
 
             if not product_info or not product_info.get('ingredients'):
-                print("📡 UPC failed or missing ingredients. Trying INCI...")
+                print(" UPC failed or missing ingredients. Trying INCI...")
                 product_info = get_product_info_from_incibeauty(barcode)
 
             if not product_info:
                 return jsonify({
-                    'error': 'Product not found in either UPCItemDB or INCI Beauty',
+                    'error': 'Sorry! We could not find this product, please try again',
                     'barcode': barcode
                 }), 404
 
@@ -412,6 +638,18 @@ def analyze_product():
             analysis = get_personalized_analysis(ingredients_list, user_profile)
         else:
             analysis = analyze_ingredients(ingredients_list)
+        
+        # Get SerpAPI product recommendations (always try to get them if we have product info)
+        if product_info:
+            print(f"🛒 Attempting to get SerpAPI recommendations for product: {product_info.get('title', 'Unknown')}")
+            serpapi_recommendations = get_product_recommendations_serpapi(user_profile or {}, product_info)
+            if serpapi_recommendations:
+                print(f" Found {len(serpapi_recommendations)} SerpAPI recommendations")
+                analysis['serpapi_recommendations'] = serpapi_recommendations
+            else:
+                print(" No SerpAPI recommendations found")
+        else:
+            print("ℹ️ No product info available, skipping SerpAPI recommendations")
 
         return jsonify({
             'success': True,
@@ -421,10 +659,10 @@ def analyze_product():
         })
 
     except Exception as e:
-        print(f"💥 Error in /analyze: {e}")
+        print(f" Error in /analyze: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    print("🧴 DermaScan Backend Starting...")
-    print(f"📊 Loaded {len(BAD_INGREDIENTS)} harmful ingredient categories")
+    print(" DermaScan Backend Starting...")
+    print(f"Loaded {len(BAD_INGREDIENTS)} harmful ingredient categories")
     app.run(debug=True, host='0.0.0.0', port=5000)
