@@ -308,6 +308,120 @@ const Results = () => {
         </div>
       )}
 
+      {/* Product Recommendations Section */}
+      {analysis.product_recommendations && analysis.product_recommendations.length > 0 && (
+        <div className="card mb-6">
+          <div className="flex items-center mb-4">
+            <h3 className="text-xl font-semibold text-primary-700">
+              🛍️ Better Alternatives
+            </h3>
+            <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+              SerpAPI
+            </span>
+          </div>
+          <p className="text-gray-600 mb-4">
+            Based on your profile and the current product, here are some better alternatives:
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {analysis.product_recommendations.map((product, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                {product.link ? (
+                  <a 
+                    href={product.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                  >
+                    <div className="flex space-x-3">
+                      {product.image && (
+                        <img 
+                          src={product.image} 
+                          alt={product.title}
+                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-800 text-sm mb-1 line-clamp-2 hover:text-primary-600 transition-colors">
+                          {product.title}
+                        </h4>
+                        <div className="text-green-600 font-medium text-sm mb-1">
+                          {product.price}
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
+                          {product.rating !== 'No rating' && (
+                            <span className="flex items-center">
+                              ⭐ {product.rating}
+                            </span>
+                          )}
+                          {product.reviews !== 'No reviews' && (
+                            <span>({product.reviews} reviews)</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-2">
+                          Sold by: {product.source}
+                        </div>
+                        <div className="inline-flex items-center text-primary-600 text-xs font-medium">
+                          View Product →
+                          <span className="ml-1 text-xs">↗</span>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                ) : (
+                  <div className="flex space-x-3">
+                    {product.image && (
+                      <img 
+                        src={product.image} 
+                        alt={product.title}
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-sm mb-1 line-clamp-2">
+                        {product.title}
+                      </h4>
+                      <div className="text-green-600 font-medium text-sm mb-1">
+                        {product.price}
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
+                        {product.rating !== 'No rating' && (
+                          <span className="flex items-center">
+                            ⭐ {product.rating}
+                          </span>
+                        )}
+                        {product.reviews !== 'No reviews' && (
+                          <span>({product.reviews} reviews)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">
+                        Sold by: {product.source}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Link not available
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              <strong>Note:</strong> These recommendations are based on your profile and current product analysis. 
+              Always read ingredient lists and reviews before purchasing.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
         <button

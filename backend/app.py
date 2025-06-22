@@ -15,15 +15,18 @@ SECRET_KEY = "QlIbnGvMx7ZceKenANc9Cm7XSLuHb64a"
 # Gemini API Key for AI recommendations
 GEMINI_API_KEY = "AIzaSyCTHv7Z6IIMxp78tksAZ_y14RPc0FJn7SU"
 
+# SerpAPI Key for product recommendations
+SERPAPI_KEY = "eb3092c3907323a7d840ca787a4559cb334a4ed442185310cbbe226ba5edcc1e"  # Replace with your actual SerpAPI key
+
 # Initialize Gemini AI for recommendations
 try:
     import google.generativeai as genai
     genai.configure(api_key=GEMINI_API_KEY)  # type: ignore
     gemini_model = genai.GenerativeModel("gemini-1.5-flash")  # type: ignore
     AI_AVAILABLE = True
-    print("🤖 AI recommendations enabled")
+    print("AI recommendations enabled")
 except Exception as e:
-    print(f"⚠️ AI not available: {e}")
+    print(f"AI not available: {e}")
     AI_AVAILABLE = False
 
 app = Flask(__name__)
@@ -35,7 +38,7 @@ def load_bad_ingredients():
         with open('data/bad_ingredients.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("⚠️ bad_ingredients.json not found.")
+        print("bad_ingredients.json not found.")
         return {}
 
 # Load skincare recommendations
@@ -44,7 +47,7 @@ def load_skincare_recommendations():
         with open('data/skincare_recommendations.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("⚠️ skincare_recommendations.json not found.")
+        print(" skincare_recommendations.json not found.")
         return {}
 
 BAD_INGREDIENTS = load_bad_ingredients()
@@ -228,7 +231,7 @@ def get_personalized_analysis(ingredients_list, user_profile):
         'total_weightage': total_weightage,
         'harmful_ingredients': harmful_found,
         'total_ingredients_checked': len(ingredients_list),
-        'personalized_score': round(personalized_score, 1),
+        'personalized_score': round(personalized_score),
         'score_category': get_score_category(personalized_score),
         'recommendations': recommendations
     }
@@ -279,10 +282,10 @@ Focus on specific product recommendations and actionable tips for this user's pr
 
             response = gemini_model.generate_content(prompt)
             ai_recommendations = json.loads(response.text)
-            print(f"✅ AI recommendations generated successfully")
+            print(f" AI recommendations generated successfully")
             return ai_recommendations
         except Exception as e:
-            print(f"❌ AI recommendations failed: {e}")
+            print(f" AI recommendations failed: {e}")
             # Fall through to basic recommendations
     
     # Fallback to basic recommendations based on user profile
@@ -352,6 +355,242 @@ Focus on specific product recommendations and actionable tips for this user's pr
     
     return fallback_recommendations
 
+def get_product_recommendations(current_product, user_profile, harmful_ingredients):
+    """
+    Get product recommendations using SerpAPI based on current product and user profile
+    Returns: list of recommended products with images, links, and reviews
+    """
+    if not SERPAPI_KEY or SERPAPI_KEY == "YOUR_SERPAPI_KEY_HERE":
+        print("SerpAPI key not configured")
+        return []
+    
+    try:
+        # Build search query based on current product and user profile
+        search_terms = []
+        
+        # Get product type from current product name
+        product_name = current_product.get('title', '').lower()
+        if 'cleanser' in product_name or 'wash' in product_name:
+            search_terms.append('gentle cleanser')
+        elif 'moisturizer' in product_name or 'cream' in product_name:
+            search_terms.append('moisturizer')
+        elif 'serum' in product_name:
+            search_terms.append('serum')
+        elif 'sunscreen' in product_name or 'spf' in product_name:
+            search_terms.append('sunscreen')
+        else:
+            search_terms.append('skincare product')
+        
+        # Add skin type specific terms
+        skin_type = user_profile.get('skinType', '') if user_profile else ''
+        if skin_type == 'dry':
+            search_terms.append('hydrating')
+            search_terms.append('for dry skin')
+        elif skin_type == 'oily':
+            search_terms.append('oil-free')
+            search_terms.append('for oily skin')
+        elif skin_type == 'combination':
+            search_terms.append('for combination skin')
+        elif skin_type == 'sensitive':
+            search_terms.append('gentle')
+            search_terms.append('for sensitive skin')
+        
+        # Add ingredients to look for
+        if user_profile:
+            recommendations = get_personalized_recommendations(user_profile)
+            if recommendations and recommendations.get('look_for_ingredients'):
+                for ingredient in recommendations['look_for_ingredients'][:2]:  # Limit to 2 ingredients
+                    search_terms.append(ingredient)
+        
+        # Build final search query
+        search_query = ' '.join(search_terms)
+        search_query += ' buy online purchase best alternatives'
+        
+        print(f"Searching for: {search_query}")
+        
+        url = "https://serpapi.com/search"
+        recommendations = []
+        
+        # 1. Get product info and images from Google Shopping
+        params_shopping = {
+            "q": search_query,
+            "api_key": SERPAPI_KEY,
+            "engine": "google_shopping",
+            "num": 8,
+            "gl": "us",
+            "hl": "en"
+        }
+        response = requests.get(url, params=params_shopping, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            shopping_results = data.get('shopping_results', [])
+            
+            for result in shopping_results:
+                if len(recommendations) >= 4:
+                    break
+                    
+                title = result.get('title', 'Unknown Product')
+                price = result.get('price', 'Price not available')
+                image = result.get('thumbnail', '') or result.get('image', '') or result.get('image_url', '')
+                rating = result.get('rating', 'No rating')
+                reviews = result.get('reviews', 'No reviews')
+                source = result.get('source', 'Unknown')
+                
+                # Try to find a purchase link for this product
+                purchase_link = result.get('link', '')
+                
+                # If no direct link from shopping results, search for it
+                if not purchase_link:
+                    try:
+                        # Search for the product on major retailers
+                        link_search_query = f'"{title}" site:amazon.com OR site:target.com OR site:walmart.com OR site:ulta.com OR site:sephora.com'
+                        params_link_search = {
+                            "q": link_search_query,
+                            "api_key": SERPAPI_KEY,
+                            "engine": "google",
+                            "num": 3,
+                            "gl": "us",
+                            "hl": "en"
+                        }
+                        link_response = requests.get(url, params=params_link_search, timeout=5)
+                        
+                        if link_response.status_code == 200:
+                            link_data = link_response.json()
+                            link_results = link_data.get('organic_results', [])
+                            
+                            for link_result in link_results:
+                                link_url = link_result.get('link', '')
+                                if any(domain in link_url for domain in ['amazon.com', 'target.com', 'walmart.com', 'ulta.com', 'sephora.com']):
+                                    purchase_link = link_url
+                                    # Update source based on the found link
+                                    if 'amazon.com' in link_url:
+                                        source = "Amazon"
+                                    elif 'target.com' in link_url:
+                                        source = "Target"
+                                    elif 'walmart.com' in link_url:
+                                        source = "Walmart"
+                                    elif 'ulta.com' in link_url:
+                                        source = "Ulta"
+                                    elif 'sephora.com' in link_url:
+                                        source = "Sephora"
+                                    break
+                    except:
+                        pass  # If link search fails, continue without link
+                
+                # Only add if we have either an image or a link
+                if image or purchase_link:
+                    recommendations.append({
+                        'title': title,
+                        'price': price,
+                        'image': image,
+                        'link': purchase_link,
+                        'rating': rating,
+                        'reviews': reviews,
+                        'source': source
+                    })
+        
+        # 2. If we still don't have 4 recommendations, fill with Google Search results
+        if len(recommendations) < 4:
+            params_search = {
+                "q": search_query,
+                "api_key": SERPAPI_KEY,
+                "engine": "google",
+                "num": 15,
+                "gl": "us",
+                "hl": "en"
+            }
+            response = requests.get(url, params=params_search, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                organic_results = data.get('organic_results', [])
+                for result in organic_results:
+                    if len(recommendations) >= 4:
+                        break
+                    title = result.get('title', '')
+                    link = result.get('link', '')
+                    snippet = result.get('snippet', '')
+                    # Skip if no link or if it's a review/article
+                    if not link or any(skip_word in title.lower() for skip_word in ['review', 'best', 'top', 'guide', 'article', 'blog']):
+                        continue
+                    # Only include if it's a product page or has product keywords
+                    is_product_page = any(domain in link for domain in [
+                        'amazon.com', 'target.com', 'walmart.com', 'ulta.com', 'sephora.com', 
+                        'cvs.com', 'walgreens.com', 'riteaid.com', 'drugstore.com', 'beauty.com',
+                        'dermstore.com', 'skinstore.com', 'lovelyskin.com', 'skincare.com'
+                    ])
+                    has_product_keywords = any(keyword in title.lower() for keyword in [
+                        'cleanser', 'moisturizer', 'serum', 'cream', 'lotion', 'wash', 
+                        'skincare', 'beauty', 'facial', 'face'
+                    ])
+                    if is_product_page or has_product_keywords:
+                        price = "Price varies"
+                        if '$' in snippet:
+                            import re
+                            price_match = re.search(r'\$\d+(?:\.\d{2})?', snippet)
+                            if price_match:
+                                price = price_match.group()
+                        rating = "No rating"
+                        if '⭐' in snippet or 'star' in snippet.lower():
+                            rating = "4.0+ stars"
+                        source = "Online Store"
+                        if 'amazon.com' in link:
+                            source = "Amazon"
+                        elif 'target.com' in link:
+                            source = "Target"
+                        elif 'walmart.com' in link:
+                            source = "Walmart"
+                        elif 'ulta.com' in link:
+                            source = "Ulta"
+                        elif 'sephora.com' in link:
+                            source = "Sephora"
+                        elif 'cvs.com' in link:
+                            source = "CVS"
+                        elif 'walgreens.com' in link:
+                            source = "Walgreens"
+                        elif 'dermstore.com' in link:
+                            source = "Dermstore"
+                        elif 'skinstore.com' in link:
+                            source = "SkinStore"
+                        
+                        # Try to get an image for this product
+                        image = ''
+                        try:
+                            # Search for product images
+                            image_query = f"{title} product image"
+                            params_image = {
+                                "q": image_query,
+                                "api_key": SERPAPI_KEY,
+                                "engine": "google_images",
+                                "num": 1,
+                                "gl": "us",
+                                "hl": "en"
+                            }
+                            image_response = requests.get(url, params=params_image, timeout=5)
+                            if image_response.status_code == 200:
+                                image_data = image_response.json()
+                                image_results = image_data.get('images_results', [])
+                                if image_results:
+                                    image = image_results[0].get('original', '')
+                        except:
+                            pass  # If image search fails, continue without image
+                        
+                        recommendations.append({
+                            'title': title,
+                            'price': price,
+                            'image': image,
+                            'link': link,
+                            'rating': rating,
+                            'reviews': 'Check reviews',
+                            'source': source
+                        })
+        
+        print(f"Returning {len(recommendations)} product recommendations (with images if available)")
+        return recommendations[:4]
+    except Exception as e:
+        print(f"Error getting product recommendations: {e}")
+        return []
+
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
@@ -362,7 +601,7 @@ def health_check():
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
-        'message': '🧴 DermaScan API Running',
+        'message': ' DermaScan API Running',
         'endpoints': ['/analyze (POST)', '/health'],
         'harmful_ingredients_loaded': len(BAD_INGREDIENTS)
     })
@@ -382,18 +621,18 @@ def analyze_product():
             print(f"🛠 Trimmed barcode to 12 digits: {barcode}")
 
         if barcode:
-            print(f"🔍 Scanning barcode: {barcode}")
+            print(f" Scanning barcode: {barcode}")
             
             product_info = get_product_info_from_incibeauty(barcode)
             print(f"PRODUCT INFO {product_info}")
 
             if not product_info or not product_info.get('ingredients'):
-                print("📡 UPC failed or missing ingredients. Trying INCI...")
+                print(" UPC failed or missing ingredients. Trying INCI...")
                 product_info = get_product_info_from_incibeauty(barcode)
 
             if not product_info:
                 return jsonify({
-                    'error': 'Product not found in either UPCItemDB or INCI Beauty',
+                    'error': 'Sorry! We could not find your reuqested item, please try again later',
                     'barcode': barcode
                 }), 404
 
@@ -410,6 +649,10 @@ def analyze_product():
         # Use personalized analysis if user profile is provided
         if user_profile:
             analysis = get_personalized_analysis(ingredients_list, user_profile)
+            # Get product recommendations if we have product info
+            if product_info:
+                product_recommendations = get_product_recommendations(product_info, user_profile, analysis.get('harmful_ingredients', {}))
+                analysis['product_recommendations'] = product_recommendations
         else:
             analysis = analyze_ingredients(ingredients_list)
 
@@ -421,10 +664,10 @@ def analyze_product():
         })
 
     except Exception as e:
-        print(f"💥 Error in /analyze: {e}")
+        print(f" Error in /analyze: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     print("🧴 DermaScan Backend Starting...")
-    print(f"📊 Loaded {len(BAD_INGREDIENTS)} harmful ingredient categories")
+    print(f"Loaded {len(BAD_INGREDIENTS)} harmful ingredient categories")
     app.run(debug=True, host='0.0.0.0', port=5000)

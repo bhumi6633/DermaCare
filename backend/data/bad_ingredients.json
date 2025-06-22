@@ -35,7 +35,7 @@
   },
   "Chemical UV filters": {
     "description": "Sunscreen agents that may disrupt hormones or irritate skin",
-    "weightage": 3,
+    "weightage": 4,
     "severity": "HIGH",
     "ingredients": [
       "Oxybenzone",
@@ -69,7 +69,7 @@
   },
   "PEGs": {
     "description": "Emulsifiers that may contain impurities like 1,4-dioxane (a possible carcinogen)",
-    "weightage": 3,
+    "weightage": 2,
     "severity": "MODERATE",
     "ingredients": [
       "PEG-8 Laurate",
@@ -80,7 +80,7 @@
   },
   "Ethanolamines": {
     "description": "May form nitrosamines, linked to cancer risk",
-    "weightage": 4,
+    "weightage": 3,
     "severity": "HIGH",
     "ingredients": [
       "Triethanolamine",
@@ -119,7 +119,7 @@
   },
   "Sulfates": {
     "description": "Cleansers that can dry or irritate the skin",
-    "weightage": 3,
+    "weightage": 2,
     "severity": "MODERATE",
     "ingredients": [
       "Sodium Laureth Sulfate",
