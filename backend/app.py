@@ -9,14 +9,14 @@ import time
 import base64
 
 # INCI Beauty API credentials
-ACCESS_KEY = "9ed19989ddfc405f"
-SECRET_KEY = "UlJ5HySMyBKMdp0ME0CVkhKe2kriI/U0"
+ACCESS_KEY = #accesskey
+SECRET_KEY = #secretkey
 
 # Gemini API Key for AI recommendations
-GEMINI_API_KEY = "AIzaSyCTHv7Z6IIMxp78tksAZ_y14RPc0FJn7SU"
+GEMINI_API_KEY = #geminiapi
 
 # SerpAPI Key for product recommendations
-SERPAPI_KEY = "eb3092c3907323a7d840ca787a4559cb334a4ed442185310cbbe226ba5edcc1e"  # Replace with your actual SerpAPI key
+SERPAPI_KEY = #serpapi
 
 # Initialize Gemini AI for recommendations
 try:
